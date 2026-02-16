@@ -48,8 +48,8 @@ const TimetableGrid = forwardRef(({ data = [], onSlotClick, onDeleteSlot }, ref)
   const usedIndices = FULL_SCHEDULE
     .map((s, i) => (!s.isBreak && usedKeys.has(`${s.start}-${s.end}`)) ? i : -1)
     .filter(i => i !== -1);
-  const firstIdx = Math.min(...usedIndices);
-  const lastIdx = Math.max(...usedIndices);
+  const firstIdx = usedIndices.length > 0 ? Math.min(...usedIndices) : 0;
+  const lastIdx = usedIndices.length > 0 ? Math.max(...usedIndices) : FULL_SCHEDULE.length - 1;
   const visibleSchedule = FULL_SCHEDULE.slice(firstIdx, lastIdx + 1);
 
   return (

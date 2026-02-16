@@ -5,11 +5,29 @@ const paginate = require('../utils/pagination');
 
 exports.getAll = async (req, res, next) => {
   try {
-    const { page, limit, classId, subjectId, status } = req.query;
+    const { page, limit, classId, subjectId, status, academicYearId, semesterId } = req.query;
     const query = {};
     if (classId) query.classId = classId;
     if (subjectId) query.subjectId = subjectId;
     if (status) query.status = status;
+    if (semesterId) query.semesterId = semesterId;
+
+    if (academicYearId) {
+      const Semester = require('../models/Semester');
+      const semesters = await Semester.find({ academicYearId });
+      const semesterIds = semesters.map(s => s._id);
+
+      // If semesterId was also provided, check if it belongs to the year
+      if (semesterId && !semesterIds.some(id => id.toString() === semesterId)) {
+        // Provided semester doesn't belong to provided year, return empty
+        return res.json({ success: true, data: [], pagination: {} });
+      }
+
+      if (!semesterId) {
+        query.semesterId = { $in: semesterIds };
+      }
+    }
+
     const result = await paginate(Exam, query, {
       page, limit,
       populate: [

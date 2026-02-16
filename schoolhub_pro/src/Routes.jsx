@@ -26,6 +26,7 @@ import Subjects from './pages/subjects';
 import FeeTypesManagement from './pages/fee-types-management';
 import StudentFeesManagement from './pages/student-fees-management';
 import ReportsManagement from './pages/reports-management';
+import ReportCards from './pages/report-cards';
 import AdminsManagement from './pages/admins-management';
 import GradeSystem from './pages/grade-system';
 import Notices from './pages/notices';
@@ -75,6 +76,7 @@ const Routes = () => {
           <Route path="/fee-types-management" element={<FeeTypesManagement />} />
           <Route path="/student-fees-management" element={<StudentFeesManagement />} />
           <Route path="/reports-management" element={<ReportsManagement />} />
+          <Route path="/report-cards" element={<ReportCards />} />
           <Route path="/school-settings" element={<SchoolSettings />} />
           <Route path="/admins-management" element={<AdminsManagement />} />
           <Route path="/grade-system" element={<GradeSystem />} />

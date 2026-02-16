@@ -5,9 +5,9 @@ import Breadcrumb from '../../components/navigation/Breadcrumb';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/AppIcon';
 import GeneralSettings from './components/GeneralSettings';
-import AcademicConfiguration from './components/AcademicConfiguration';
 import UserManagement from './components/UserManagement';
 import SystemPreferences from './components/SystemPreferences';
+import AppearanceSettings from './components/AppearanceSettings';
 import settingsService from '../../services/settingsService';
 import { useSchoolSettings } from '../../contexts/SchoolSettingsContext';
 
@@ -30,8 +30,8 @@ const SchoolSettings = () => {
 
   const tabs = [
     { id: 'general', label: 'General Settings', icon: 'Settings' },
-    { id: 'academic', label: 'Academic Configuration', icon: 'BookOpen' },
     { id: 'users', label: 'User Management', icon: 'Users' },
+    { id: 'appearance', label: 'Appearance', icon: 'Palette' },
     { id: 'system', label: 'System Preferences', icon: 'Sliders' }
   ];
 
@@ -91,7 +91,7 @@ const SchoolSettings = () => {
       <AdminSidebar isCollapsed={sidebarCollapsed} onToggle={setSidebarCollapsed} />
 
       <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        <AuthHeader onLogout={() => { localStorage.clear(); window.location.href = '/'; }} />
+        <AuthHeader onLogout={() => { window.location.href = '/'; }} />
         <Breadcrumb items={breadcrumbItems} />
 
         <div className="p-6 space-y-6">
@@ -143,10 +143,9 @@ const SchoolSettings = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
-                      activeTab === tab.id
-                        ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'
-                    }`}
+                    className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors whitespace-nowrap ${activeTab === tab.id
+                      ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'
+                      }`}
                   >
                     <Icon name={tab.icon} size={18} />
                     {tab.label}
@@ -169,9 +168,9 @@ const SchoolSettings = () => {
               ) : (
                 <>
                   {activeTab === 'general' && <GeneralSettings settings={settings} onChange={handleSettingsChange} />}
-                  {activeTab === 'academic' && <AcademicConfiguration />}
                   {activeTab === 'users' && <UserManagement settings={settings} onChange={handleSettingsChange} />}
-                  {activeTab === 'system' && <SystemPreferences />}
+                  {activeTab === 'appearance' && <AppearanceSettings settings={settings} onChange={handleSettingsChange} />}
+                  {activeTab === 'system' && <SystemPreferences settings={settings} onChange={handleSettingsChange} />}
                 </>
               )}
             </div>

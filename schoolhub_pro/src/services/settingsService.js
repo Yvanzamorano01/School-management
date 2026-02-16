@@ -13,10 +13,8 @@ const defaultSettings = {
   schoolLogo: null, // base64 string
 
   // Academic
-  academicYear: '2024-2025',
-  academicYearStart: '',
-  academicYearEnd: '',
-  numberOfTerms: '2',
+  // Academic (Managed via robust modules now)
+  // academicYear, dates, and terms are now handled in /academic-years and /semesters
   gradeSystem: 'percentage',
   passingGrade: '40',
   gradeRanges: [
@@ -39,7 +37,12 @@ const defaultSettings = {
   // System
   timezone: 'UTC-5',
   dateFormat: 'MM/DD/YYYY',
-  language: 'en',
+  language: 'Français',
+  currency: 'XAF',
+  // Appearance
+  theme: 'light', // light, dark, system
+  primaryColor: '#1E40AF', // Default blue-800
+  // termLabels moved to semester management
   emailNotifications: true,
   smsNotifications: false,
   pushNotifications: true,

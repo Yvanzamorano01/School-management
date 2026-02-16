@@ -1,8 +1,9 @@
 import React from 'react';
 import Button from '../../../components/ui/Button';
+import { formatCurrency } from '../../../utils/format';
 
 
-const FeeStructureTable = ({ data, onEdit }) => {
+const FeeStructureTable = ({ data, onEdit, currency }) => {
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
@@ -22,13 +23,14 @@ const FeeStructureTable = ({ data, onEdit }) => {
             <tr key={fee?.id} className="border-b border-border hover:bg-muted/50 transition-colors">
               <td className="py-3 px-4 text-foreground font-medium">{fee?.name}</td>
               <td className="py-3 px-4 text-muted-foreground">{fee?.description || '-'}</td>
-              <td className="py-3 px-4 text-foreground font-semibold">{fee?.amount?.toLocaleString()} FCFA</td>
+              <td className="py-3 px-4 text-foreground font-semibold">
+                {formatCurrency(fee?.amount, currency)}
+              </td>
               <td className="py-3 px-4 text-muted-foreground">{fee?.frequency}</td>
               <td className="py-3 px-4 text-muted-foreground">{fee?.classId?.name || 'Toutes les classes'}</td>
               <td className="py-3 px-4">
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  fee?.isActive ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'
-                }`}>
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${fee?.isActive ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'
+                  }`}>
                   {fee?.isActive ? 'Actif' : 'Inactif'}
                 </span>
               </td>

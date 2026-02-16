@@ -4,27 +4,28 @@ import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import Button from '../../../components/ui/Button';
 
-const GenerateReportModal = ({ isOpen, onClose, onSave, report }) => {
+const GenerateReportModal = ({ isOpen, onClose, onSave, report, classes = [] }) => {
   const [formData, setFormData] = useState({
     dateFrom: '',
     dateTo: '',
     class: 'all',
-    format: 'pdf'
+    format: 'csv'
   });
   const [errors, setErrors] = useState({});
 
   const classOptions = [
     { value: 'all', label: 'All Classes' },
-    { value: 'grade-10', label: 'Grade 10' },
-    { value: 'grade-11', label: 'Grade 11' },
-    { value: 'grade-12', label: 'Grade 12' }
+    ...classes.map(c => ({ value: c.value || c.id || c._id, label: c.label || c.name }))
   ];
 
   const formatOptions = [
+    { value: 'csv', label: 'CSV File' },
     { value: 'pdf', label: 'PDF Document' },
-    { value: 'excel', label: 'Excel Spreadsheet' },
-    { value: 'csv', label: 'CSV File' }
+    { value: 'excel', label: 'Excel Spreadsheet' }
   ];
+
+  const needsClassFilter = report?.parameters?.includes('Class');
+  const needsDateRange = report?.parameters?.includes('Date Range');
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -36,16 +37,16 @@ const GenerateReportModal = ({ isOpen, onClose, onSave, report }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData?.dateFrom) {
-      newErrors.dateFrom = 'Start date is required';
-    }
-
-    if (!formData?.dateTo) {
-      newErrors.dateTo = 'End date is required';
-    }
-
-    if (formData?.dateFrom && formData?.dateTo && formData?.dateFrom > formData?.dateTo) {
-      newErrors.dateTo = 'End date must be after start date';
+    if (needsDateRange) {
+      if (!formData?.dateFrom) {
+        newErrors.dateFrom = 'Start date is required';
+      }
+      if (!formData?.dateTo) {
+        newErrors.dateTo = 'End date is required';
+      }
+      if (formData?.dateFrom && formData?.dateTo && formData?.dateFrom > formData?.dateTo) {
+        newErrors.dateTo = 'End date must be after start date';
+      }
     }
 
     setErrors(newErrors);
@@ -71,30 +72,35 @@ const GenerateReportModal = ({ isOpen, onClose, onSave, report }) => {
           <p className="text-sm text-muted-foreground">{report?.description}</p>
         </div>
 
-        <Input
-          label="Start Date"
-          type="date"
-          value={formData?.dateFrom}
-          onChange={(e) => handleInputChange('dateFrom', e?.target?.value)}
-          error={errors?.dateFrom}
-          required
-        />
+        {needsDateRange && (
+          <>
+            <Input
+              label="Start Date"
+              type="date"
+              value={formData?.dateFrom}
+              onChange={(e) => handleInputChange('dateFrom', e?.target?.value)}
+              error={errors?.dateFrom}
+              required
+            />
+            <Input
+              label="End Date"
+              type="date"
+              value={formData?.dateTo}
+              onChange={(e) => handleInputChange('dateTo', e?.target?.value)}
+              error={errors?.dateTo}
+              required
+            />
+          </>
+        )}
 
-        <Input
-          label="End Date"
-          type="date"
-          value={formData?.dateTo}
-          onChange={(e) => handleInputChange('dateTo', e?.target?.value)}
-          error={errors?.dateTo}
-          required
-        />
-
-        <Select
-          label="Class"
-          options={classOptions}
-          value={formData?.class}
-          onChange={(value) => handleInputChange('class', value)}
-        />
+        {needsClassFilter && (
+          <Select
+            label="Class"
+            options={classOptions}
+            value={formData?.class}
+            onChange={(value) => handleInputChange('class', value)}
+          />
+        )}
 
         <Select
           label="Export Format"

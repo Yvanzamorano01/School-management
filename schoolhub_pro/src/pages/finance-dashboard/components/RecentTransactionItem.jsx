@@ -1,8 +1,9 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 import { getInitials, getAvatarColor, hasValidPhoto, DEFAULT_AVATAR_SM } from '../../../utils/avatar';
+import { formatCurrency } from '../../../utils/format';
 
-const RecentTransactionItem = ({ transaction }) => {
+const RecentTransactionItem = ({ transaction, currency }) => {
   const getPaymentMethodIcon = (method) => {
     const icons = {
       'Cash': 'Banknote',
@@ -41,7 +42,9 @@ const RecentTransactionItem = ({ transaction }) => {
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2 mb-1">
           <h4 className="text-sm md:text-base font-medium text-foreground truncate">{transaction?.studentName}</h4>
-          <span className="text-sm md:text-base font-semibold text-foreground whitespace-nowrap">{transaction?.amount?.toLocaleString()} FCFA</span>
+          <span className="text-sm md:text-base font-semibold text-foreground whitespace-nowrap">
+            {formatCurrency(transaction?.amount, currency)}
+          </span>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">

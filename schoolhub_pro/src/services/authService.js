@@ -75,6 +75,16 @@ const authService = {
   async register(email, password, role, profileData) {
     const response = await api.post('/auth/public-register', { email, password, role, profileData });
     return response.data;
+  },
+
+  async getUserStats() {
+    const response = await api.get('/auth/user-stats');
+    return response.data;
+  },
+
+  async toggleUserActive(userId) {
+    const response = await api.patch(`/auth/users/${userId}/toggle-active`);
+    return response.data;
   }
 };
 

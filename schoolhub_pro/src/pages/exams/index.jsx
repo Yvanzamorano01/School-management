@@ -11,15 +11,18 @@ import ExamCard from './components/ExamCard';
 import CreateExamModal from './components/CreateExamModal';
 import EnterMarksModal from './components/EnterMarksModal';
 import ViewResultsModal from './components/ViewResultsModal';
+import AcademicYearFilter from '../../components/common/AcademicYearFilter';
 import examService from '../../services/examService';
 import classService from '../../services/classService';
 import subjectService from '../../services/subjectService';
+import semesterService from '../../services/semesterService';
 
 const Exams = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClass, setSelectedClass] = useState('all');
   const [selectedSubject, setSelectedSubject] = useState('all');
+  const [selectedYear, setSelectedYear] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showMarksModal, setShowMarksModal] = useState(false);
   const [showResultsModal, setShowResultsModal] = useState(false);
@@ -27,6 +30,7 @@ const Exams = () => {
   const [exams, setExams] = useState([]);
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [semesters, setSemesters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -43,17 +47,22 @@ const Exams = () => {
 
   useEffect(() => {
     fetchReferenceData();
-    fetchExams();
   }, []);
+
+  useEffect(() => {
+    fetchExams();
+  }, [selectedYear]);
 
   const fetchReferenceData = async () => {
     try {
-      const [classesData, subjectsData] = await Promise.all([
+      const [classesData, subjectsData, semestersData] = await Promise.all([
         classService.getAll(),
-        subjectService.getAll()
+        subjectService.getAll(),
+        semesterService.getAll()
       ]);
       setClasses(classesData.map(c => ({ value: c._id || c.id, label: c.name })));
       setSubjects(subjectsData.map(s => ({ value: s._id || s.id, label: s.name })));
+      setSemesters(semestersData.map(s => ({ value: s._id || s.id, label: `${s.name}${s.academicYearId?.name ? ` (${s.academicYearId.name})` : ''}` })));
     } catch (err) {
       console.error('Error loading reference data:', err);
     }
@@ -63,7 +72,10 @@ const Exams = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await examService.getAll();
+      const params = {};
+      if (selectedYear) params.academicYearId = selectedYear;
+
+      const data = await examService.getAll(params); // examService needs to accept params
       setExams(data || []);
     } catch (err) {
       console.error('Failed to fetch exams:', err);
@@ -78,7 +90,7 @@ const Exams = () => {
     const subjectName = exam.subjectId?.name || '';
     const className = exam.classId?.name || '';
     const matchesSearch = exam.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         subjectName.toLowerCase().includes(searchQuery.toLowerCase());
+      subjectName.toLowerCase().includes(searchQuery.toLowerCase());
     const classIdVal = exam.classId?._id || exam.classId;
     const subjectIdVal = exam.subjectId?._id || exam.subjectId;
     const matchesClass = selectedClass === 'all' || classIdVal === selectedClass;
@@ -119,7 +131,7 @@ const Exams = () => {
     <div className="min-h-screen bg-background">
       <SidebarComponent isCollapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
       <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        <AuthHeader onLogout={() => { localStorage.clear(); window.location.href = '/'; }} />
+        <AuthHeader onLogout={() => { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }} />
         <div className="main-content-inner">
           <Breadcrumb items={breadcrumbItems} />
 
@@ -130,7 +142,7 @@ const Exams = () => {
                 <h1 className="text-2xl md:text-3xl font-semibold text-foreground mb-1">Exams Management</h1>
                 <p className="text-sm text-muted-foreground">Create exams, enter marks, and view results</p>
               </div>
-{userRole === 'admin' && (
+              {userRole === 'admin' && (
                 <Button iconName="Plus" iconPosition="left" onClick={() => setShowCreateModal(true)}>
                   Create Exam
                 </Button>
@@ -187,6 +199,14 @@ const Exams = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     iconName="Search"
+                  />
+                </div>
+                <div className="w-full md:w-48">
+                  <AcademicYearFilter
+                    selectedYear={selectedYear}
+                    onChange={setSelectedYear}
+                    label=""
+                    className="w-full"
                   />
                 </div>
                 <div className="w-full md:w-48">
@@ -252,6 +272,7 @@ const Exams = () => {
         onCreate={handleCreateExam}
         classes={classes}
         subjects={subjects}
+        semesters={semesters}
       />
 
       {showMarksModal && (

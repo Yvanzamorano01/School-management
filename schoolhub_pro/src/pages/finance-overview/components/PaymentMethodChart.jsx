@@ -1,7 +1,8 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { formatCurrency } from '../../../utils/format';
 
-const PaymentMethodChart = ({ data }) => {
+const PaymentMethodChart = ({ data, currency }) => {
   const COLORS = [
     'var(--color-primary)',
     'var(--color-secondary)',
@@ -15,7 +16,7 @@ const PaymentMethodChart = ({ data }) => {
         <div className="bg-popover border border-border rounded-lg p-3 shadow-elevation-2">
           <p className="text-sm font-medium text-foreground mb-1">{payload?.[0]?.name}</p>
           <p className="text-xs text-muted-foreground">
-            {payload?.[0]?.value?.toLocaleString()} FCFA
+            {formatCurrency(payload?.[0]?.value, currency)}
           </p>
         </div>
       );
@@ -44,8 +45,8 @@ const PaymentMethodChart = ({ data }) => {
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
-            <Legend 
-              verticalAlign="bottom" 
+            <Legend
+              verticalAlign="bottom"
               height={36}
               wrapperStyle={{ fontSize: '12px' }}
             />

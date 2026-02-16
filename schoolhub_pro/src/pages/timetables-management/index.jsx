@@ -177,8 +177,8 @@ const TimetablesManagement = () => {
       const usedIndices = FULL_SCHEDULE
         .map((s, i) => (!s.isBreak && usedKeys.has(`${s.start}-${s.end}`)) ? i : -1)
         .filter(i => i !== -1);
-      const firstIdx = Math.min(...usedIndices);
-      const lastIdx = Math.max(...usedIndices);
+      const firstIdx = usedIndices.length > 0 ? Math.min(...usedIndices) : 0;
+      const lastIdx = usedIndices.length > 0 ? Math.max(...usedIndices) : FULL_SCHEDULE.length - 1;
       const visibleSchedule = FULL_SCHEDULE.slice(firstIdx, lastIdx + 1);
 
       // Cell type map for coloring
@@ -196,7 +196,8 @@ const TimetablesManagement = () => {
 
       // Title
       pdf.setFontSize(16);
-      pdf.text(`Timetable - ${selectedClassName}`, 14, 15);
+      const className = classes.find(c => c.id === selectedClass)?.name || 'Unknown';
+      pdf.text(`Timetable - ${className}`, 14, 15);
       pdf.setFontSize(10);
       pdf.setTextColor(130);
       pdf.text(`Generated on ${new Date().toLocaleDateString()}`, 14, 22);
@@ -247,7 +248,7 @@ const TimetablesManagement = () => {
         },
       });
 
-      pdf.save(`timetable-${selectedClassName.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+      pdf.save(`timetable-${className.replace(/\s+/g, '-').toLowerCase()}.pdf`);
     } catch (err) {
       console.error('PDF export failed:', err);
       alert('Failed to export PDF');
@@ -270,7 +271,7 @@ const TimetablesManagement = () => {
       <SidebarComponent isCollapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
       <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        <AuthHeader onLogout={() => { localStorage.clear(); window.location.href = '/'; }} />
+        <AuthHeader onLogout={() => { window.location.href = '/'; }} />
         <div className="main-content-inner">
           <Breadcrumb items={breadcrumbItems} />
 

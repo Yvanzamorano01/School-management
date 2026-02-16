@@ -9,6 +9,7 @@ import Button from '../../components/ui/Button';
 import ReportCard from './components/ReportCard';
 import GenerateReportModal from './components/GenerateReportModal';
 import reportService from '../../services/reportService';
+import classService from '../../services/classService';
 
 
 const ReportsManagement = () => {
@@ -17,6 +18,7 @@ const ReportsManagement = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [filterCategory, setFilterCategory] = useState('all');
   const [reports, setReports] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -43,8 +45,13 @@ const ReportsManagement = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await reportService.getAll();
+      const [data, classesData] = await Promise.all([
+        reportService.getAll(),
+        classService.getAll()
+      ]);
       setReports(data || []);
+      const classesArr = Array.isArray(classesData) ? classesData : (classesData?.data || []);
+      setClasses(classesArr.map(c => ({ value: c._id || c.id, label: c.name })));
     } catch (err) {
       console.error('Error fetching reports:', err);
       setError(err.message || 'Failed to load reports');
@@ -59,10 +66,20 @@ const ReportsManagement = () => {
     setShowGenerateModal(true);
   };
 
-  const handleSaveReport = (reportData) => {
-    console.log('Generating report:', reportData);
-    setShowGenerateModal(false);
-    setSelectedReport(null);
+  const handleSaveReport = async (reportData) => {
+    try {
+      await reportService.generateReport({
+        reportId: reportData.reportId,
+        dateFrom: reportData.dateFrom,
+        dateTo: reportData.dateTo,
+        format: reportData.format
+      });
+      setShowGenerateModal(false);
+      setSelectedReport(null);
+    } catch (err) {
+      console.error('Error generating report:', err);
+      alert('Failed to generate report. Please try again.');
+    }
   };
 
   const filteredReports = reports?.filter(report =>
@@ -76,15 +93,11 @@ const ReportsManagement = () => {
   return (
     <div className="min-h-screen bg-background">
       <AdminSidebar isCollapsed={sidebarCollapsed} onToggle={setSidebarCollapsed} />
-      
+
       <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        <AuthHeader 
+        <AuthHeader
           userName={userName}
           userRole={userRole === 'admin' ? 'Administrator' : userRole}
-          onLogout={() => {
-            localStorage.clear();
-            window.location.href = '/login';
-          }}
         />
         <Breadcrumb items={breadcrumbItems} />
 
@@ -230,6 +243,7 @@ const ReportsManagement = () => {
           }}
           onSave={handleSaveReport}
           report={selectedReport}
+          classes={classes}
         />
       )}
     </div>

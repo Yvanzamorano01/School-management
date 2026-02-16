@@ -1,8 +1,9 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
+import { formatCurrency } from '../../../utils/format';
 
 
-const FeeTypeCard = ({ feeType, onView, onEdit, onDelete }) => {
+const FeeTypeCard = ({ feeType, onView, onEdit, onDelete, currency }) => {
   return (
     <div className="bg-background rounded-lg border border-border p-5 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-4">
@@ -12,9 +13,8 @@ const FeeTypeCard = ({ feeType, onView, onEdit, onDelete }) => {
           </div>
           <div>
             <h3 className="font-semibold text-foreground text-lg">{feeType?.name}</h3>
-            <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-              feeType?.status === 'Active' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
-            }`}>
+            <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${feeType?.status === 'Active' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
+              }`}>
               {feeType?.status}
             </span>
           </div>
@@ -26,7 +26,9 @@ const FeeTypeCard = ({ feeType, onView, onEdit, onDelete }) => {
       <div className="space-y-2 mb-4">
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Amount:</span>
-          <span className="text-sm font-semibold text-foreground">{feeType?.amount?.toLocaleString()} FCFA</span>
+          <span className="text-sm font-semibold text-foreground">
+            {formatCurrency(feeType?.amount, currency)}
+          </span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Due Date:</span>

@@ -1,7 +1,8 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
+import { formatCurrency } from '../../../utils/format';
 
-const StudentFeeRow = ({ student, onRecordPayment }) => {
+const StudentFeeRow = ({ student, onRecordPayment, currency }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'Paid':
@@ -51,13 +52,19 @@ const StudentFeeRow = ({ student, onRecordPayment }) => {
         </div>
       </td>
       <td className="py-4 px-4">
-        <span className="font-semibold text-foreground">{student?.totalAmount?.toLocaleString()} FCFA</span>
+        <span className="font-semibold text-foreground">
+          {formatCurrency(student?.totalAmount, currency)}
+        </span>
       </td>
       <td className="py-4 px-4">
-        <span className="font-semibold text-success">{student?.paidAmount?.toLocaleString()} FCFA</span>
+        <span className="font-semibold text-success">
+          {formatCurrency(student?.paidAmount, currency)}
+        </span>
       </td>
       <td className="py-4 px-4">
-        <span className="font-semibold text-warning">{student?.pendingAmount?.toLocaleString()} FCFA</span>
+        <span className="font-semibold text-warning">
+          {formatCurrency(student?.pendingAmount, currency)}
+        </span>
       </td>
       <td className="py-4 px-4">
         <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(student?.status)}`}>

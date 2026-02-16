@@ -116,7 +116,7 @@ const ClassFormModal = ({ isOpen, onClose, onSubmit, editingClass, academicYears
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Class Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Class Name <span className="text-red-500">*</span>
           </label>
           <Input
@@ -133,7 +133,7 @@ const ClassFormModal = ({ isOpen, onClose, onSubmit, editingClass, academicYears
 
         {/* Class Code */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Class Code <span className="text-red-500">*</span>
           </label>
           <Input
@@ -150,7 +150,7 @@ const ClassFormModal = ({ isOpen, onClose, onSubmit, editingClass, academicYears
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Description <span className="text-red-500">*</span>
           </label>
           <textarea
@@ -158,7 +158,7 @@ const ClassFormModal = ({ isOpen, onClose, onSubmit, editingClass, academicYears
             onChange={(e) => handleChange('description', e?.target?.value)}
             placeholder="Describe the curriculum and academic focus"
             rows={3}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors?.description ? 'border-red-500' : 'border-gray-300'}`}
+            className={`w-full px-3 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-foreground ${errors?.description ? 'border-red-500' : 'border-border'}`}
           />
           {errors?.description && (
             <p className="mt-1 text-sm text-red-600">{errors?.description}</p>
@@ -167,7 +167,7 @@ const ClassFormModal = ({ isOpen, onClose, onSubmit, editingClass, academicYears
 
         {/* Academic Year */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Academic Year <span className="text-red-500">*</span>
           </label>
           <Select
@@ -181,7 +181,7 @@ const ClassFormModal = ({ isOpen, onClose, onSubmit, editingClass, academicYears
 
         {/* Subjects */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Subjects
           </label>
           <div className="flex gap-2 mb-2">
@@ -199,12 +199,12 @@ const ClassFormModal = ({ isOpen, onClose, onSubmit, editingClass, academicYears
           </div>
           <div className="flex flex-wrap gap-2">
             {formData?.subjects?.map((subject, index) => (
-              <span key={index} className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">
+              <span key={index} className="inline-flex items-center px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">
                 {subject}
                 <button
                   type="button"
                   onClick={() => handleRemoveSubject(subject)}
-                  className="ml-2 text-blue-600 hover:text-blue-800"
+                  className="ml-2 text-primary/70 hover:text-primary"
                 >
                   <Icon name="X" size={14} />
                 </button>
@@ -220,16 +220,16 @@ const ClassFormModal = ({ isOpen, onClose, onSubmit, editingClass, academicYears
             onCheckedChange={(checked) => handleChange('isActive', checked)}
             id="isActive"
           />
-          <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
+          <label htmlFor="isActive" className="ml-2 text-sm text-foreground">
             Active (visible to students and teachers)
           </label>
         </div>
 
         {/* Info Box */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
           <div className="flex items-start">
-            <Icon name="Info" size={20} className="text-blue-600 mr-3 mt-0.5" />
-            <div className="text-sm text-blue-800">
+            <Icon name="Info" size={20} className="text-primary mr-3 mt-0.5" />
+            <div className="text-sm text-primary/80">
               <p className="font-medium mb-1">Class Definition:</p>
               <ul className="list-disc list-inside space-y-1 text-xs">
                 <li>A Class represents the academic level (e.g., Grade 10, Form 1)</li>
@@ -242,7 +242,7 @@ const ClassFormModal = ({ isOpen, onClose, onSubmit, editingClass, academicYears
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end gap-3 pt-4 border-t border-border">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>

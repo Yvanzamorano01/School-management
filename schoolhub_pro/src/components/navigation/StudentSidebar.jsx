@@ -63,9 +63,9 @@ const StudentSidebar = ({ isCollapsed = false, onToggle }) => {
         <div className="portal-sidebar-header">
           <div className="portal-sidebar-logo">
             {schoolLogo ? (
-              <img src={schoolLogo} alt="School logo" className="w-6 h-6 object-contain rounded" />
+              <img src={schoolLogo} alt="School logo" className="w-12 h-12 object-contain rounded" />
             ) : (
-              <Icon name="GraduationCap" size={24} color="var(--color-primary)" />
+              <Icon name="GraduationCap" size={40} color="var(--color-primary)" />
             )}
           </div>
           <span className="portal-sidebar-brand">{schoolName}</span>

@@ -1,0 +1,76 @@
+﻿
+­ƒöÉ Authenticating...
+
+­ƒôà === ACADEMIC YEARS ===
+
+ÔÅ│ === SEMESTERS ===
+
+­ƒôØ === EXAMS ===
+  ­ƒôè Exam status distribution: {"completed":8,"upcoming":2}
+
+­ƒôè === REPORT CARDS ===
+  ­ƒÄô Testing report card: Kadidia Fall | 2eme Annee (L2) | Semestre 2
+
+  ­ƒôï Testing class report cards for 2eme Annee (L2)...
+
+­ƒöù === CROSS-MODULE LOGICAL CHECKS ===
+
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+­ƒôè RESULTS: 52 passed, 3 failed
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  Ô£à Login succeeds
+  Ô£à Academic Years endpoint returns data
+  ÔØî There is an active academic year ÔÇö None found
+  Ô£à Semesters endpoint returns data
+  Ô£à Semester "Semestre 2" has valid dates
+  ÔØî Semester "Semestre 2" has status
+  Ô£à Semester "Semestre 1" has valid dates
+  ÔØî Semester "Semestre 1" has status
+  Ô£à Exams endpoint returns data
+  Ô£à Exam has title
+  Ô£à Exam has totalMarks
+  Ô£à Exam has status
+  Ô£à Exam has classId
+  Ô£à At least one completed exam exists
+  Ô£à Completed exam has results
+  Ô£à Result has marksObtained
+  Ô£à Result has percentage
+  Ô£à Result has grade
+  Ô£à marksObtained <= totalMarks
+  Ô£à Classes endpoint returns data
+  Ô£à Report card endpoint returns success
+  Ô£à RC has student info
+  Ô£à RC student name matches
+  Ô£à RC has studentId
+  Ô£à RC has class
+  Ô£à RC has semester info
+  Ô£à RC semester name matches
+  Ô£à RC has subjects array
+  Ô£à Subject has name
+  Ô£à Subject has marks
+  Ô£à Subject has percentage
+  Ô£à Subject has grade
+  Ô£à Subject percentage is 0-100
+  Ô£à RC has summary
+  Ô£à Summary has totalMarks
+  Ô£à Summary has percentage
+  Ô£à Summary has grade
+  Ô£à Summary has rank
+  Ô£à Summary has totalStudents
+  Ô£à Summary has passed boolean
+  Ô£à RC has attendance
+  Ô£à Attendance has present count
+  Ô£à Attendance has absent count
+  Ô£à Attendance has rate
+  Ô£à Summary totalMarks matches subjects sum
+  Ô£à Rank is within range
+  Ô£à Class report cards returns success
+  Ô£à Class report cards has data array
+  Ô£à Class report cards has meta
+  Ô£à Class RC entry has name
+  Ô£à Class RC entry has rank
+  Ô£à Class RC entry has passed boolean
+  Ô£à Class RC is sorted by rank
+  Ô£à All semesters link to valid academic years
+  Ô£à Exams link to valid semesters
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ

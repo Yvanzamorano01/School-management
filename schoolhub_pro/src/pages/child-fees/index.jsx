@@ -4,9 +4,12 @@ import AuthHeader from '../../components/navigation/AuthHeader';
 import Breadcrumb from '../../components/navigation/Breadcrumb';
 import Icon from '../../components/AppIcon';
 import api from '../../services/api';
+import { useSchoolSettings } from '../../contexts/SchoolSettingsContext';
+import { formatCurrency } from '../../utils/format';
 
 const ChildFees = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const { currency } = useSchoolSettings();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [children, setChildren] = useState([]);
@@ -29,7 +32,7 @@ const ChildFees = () => {
         if (selectedChild) {
             fetchFees();
         }
-    }, [selectedChild]);
+    }, [selectedChild, currency]);
 
     const fetchChildren = async () => {
         try {
@@ -68,7 +71,7 @@ const ChildFees = () => {
     };
 
     const selectedChildData = children.find(c => c._id === selectedChild);
-    const totalAmount = fees.reduce((sum, f) => sum + (f.amount || 0), 0);
+    const totalAmount = fees.reduce((sum, f) => sum + (f.totalAmount || f.amount || 0), 0);
     const paidAmount = fees.reduce((sum, f) => sum + (f.paidAmount || 0), 0);
     const pendingAmount = totalAmount - paidAmount;
 
@@ -134,7 +137,7 @@ const ChildFees = () => {
                                         </div>
                                         <span className="text-sm text-muted-foreground">Total Fees</span>
                                     </div>
-                                    <p className="text-2xl font-bold text-foreground">${totalAmount.toLocaleString()}</p>
+                                    <p className="text-2xl font-bold text-foreground">{formatCurrency(totalAmount, currency)}</p>
                                 </div>
 
                                 <div className="bg-card border border-border rounded-xl p-6">
@@ -144,7 +147,7 @@ const ChildFees = () => {
                                         </div>
                                         <span className="text-sm text-muted-foreground">Paid</span>
                                     </div>
-                                    <p className="text-2xl font-bold text-success">${paidAmount.toLocaleString()}</p>
+                                    <p className="text-2xl font-bold text-success">{formatCurrency(paidAmount, currency)}</p>
                                 </div>
 
                                 <div className="bg-card border border-border rounded-xl p-6">
@@ -154,7 +157,7 @@ const ChildFees = () => {
                                         </div>
                                         <span className="text-sm text-muted-foreground">Pending</span>
                                     </div>
-                                    <p className="text-2xl font-bold text-warning">${pendingAmount.toLocaleString()}</p>
+                                    <p className="text-2xl font-bold text-warning">{formatCurrency(pendingAmount, currency)}</p>
                                 </div>
                             </div>
 
@@ -184,12 +187,12 @@ const ChildFees = () => {
                                                 {fees.map((fee, idx) => (
                                                     <tr key={idx} className="border-b border-border">
                                                         <td className="py-4 px-4 font-medium text-foreground">{fee.feeTypeId?.name || 'Fee'}</td>
-                                                        <td className="py-4 px-4 text-muted-foreground">${(fee.amount || 0).toLocaleString()}</td>
-                                                        <td className="py-4 px-4 text-muted-foreground">${(fee.paidAmount || 0).toLocaleString()}</td>
+                                                        <td className="py-4 px-4 text-muted-foreground">{formatCurrency(fee.totalAmount || fee.amount || 0, currency)}</td>
+                                                        <td className="py-4 px-4 text-muted-foreground">{formatCurrency(fee.paidAmount || 0, currency)}</td>
                                                         <td className="py-4 px-4">
                                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${fee.status === 'paid' ? 'bg-success/10 text-success' :
-                                                                    fee.status === 'partial' ? 'bg-warning/10 text-warning' :
-                                                                        'bg-error/10 text-error'
+                                                                fee.status === 'partial' ? 'bg-warning/10 text-warning' :
+                                                                    'bg-error/10 text-error'
                                                                 }`}>
                                                                 {fee.status || 'pending'}
                                                             </span>

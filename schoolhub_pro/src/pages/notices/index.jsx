@@ -118,9 +118,36 @@ const Notices = () => {
     setCurrentPage(1);
   };
 
-  const handleView = (notice) => {
-    setSelectedNotice(notice);
-    setShowViewModal(true);
+  const handleView = async (notice) => {
+    try {
+      // Call backend to trigger view increment
+      const data = await noticeService.getById(notice.id);
+
+      // Format the response to match component structure
+      // noticeService.getById returns response.data (already unwrapped by interceptor)
+      const updatedNotice = {
+        id: data._id || data.id,
+        title: data.title,
+        content: data.content,
+        target: data.target || 'All',
+        priority: data.priority || 'Normal',
+        author: data.author || 'Admin Office',
+        publishDate: data.publishDate ? new Date(data.publishDate).toISOString().split('T')[0] : '',
+        status: data.status || 'Draft',
+        views: data.views || 0
+      };
+
+      setSelectedNotice(updatedNotice);
+
+      // Update the list with new view count
+      setNoticesData(prev => prev.map(n => n.id === notice.id ? updatedNotice : n));
+      setShowViewModal(true);
+    } catch (error) {
+      console.error("Failed to fetch notice details", error);
+      // Fallback to existing data
+      setSelectedNotice(notice);
+      setShowViewModal(true);
+    }
   };
 
   const handleEdit = (notice) => {
@@ -195,10 +222,7 @@ const Notices = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = '/';
-  };
+
 
   const dashboardPath = userRole === 'admin' ? '/admin-dashboard' : userRole === 'teacher' ? '/teacher-dashboard' : '/student-dashboard';
   const breadcrumbItems = [
@@ -273,7 +297,7 @@ const Notices = () => {
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
 
-      <AuthHeader onLogout={handleLogout} />
+      <AuthHeader />
 
       <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <div className="main-content-inner">
@@ -395,60 +419,59 @@ const Notices = () => {
           {!loading && (
             <div className="space-y-4">
               {paginatedNotices?.map((notice) => (
-              <div
-                key={notice?.id}
-                className="bg-card rounded-xl border border-border p-6 hover:shadow-md transition-shadow"
-              >
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadge(notice?.priority)}`}>
-                        {notice?.priority}
-                      </span>
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Icon name={getTargetIcon(notice?.target)} size={14} />
-                        {notice?.target}
-                      </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        notice?.status === 'Published' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
-                      }`}>
-                        {notice?.status}
-                      </span>
+                <div
+                  key={notice?.id}
+                  className="bg-card rounded-xl border border-border p-6 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadge(notice?.priority)}`}>
+                          {notice?.priority}
+                        </span>
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Icon name={getTargetIcon(notice?.target)} size={14} />
+                          {notice?.target}
+                        </span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${notice?.status === 'Published' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
+                          }`}>
+                          {notice?.status}
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-semibold text-foreground mb-2">{notice?.title}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{notice?.content}</p>
+                      <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Icon name="User" size={12} />
+                          {notice?.author}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Icon name="Calendar" size={12} />
+                          {notice?.publishDate}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Icon name="Eye" size={12} />
+                          {notice?.views} views
+                        </span>
+                      </div>
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">{notice?.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{notice?.content}</p>
-                    <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Icon name="User" size={12} />
-                        {notice?.author}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Icon name="Calendar" size={12} />
-                        {notice?.publishDate}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Icon name="Eye" size={12} />
-                        {notice?.views} views
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleView(notice)}>
+                        <Icon name="Eye" size={16} />
+                      </Button>
+                      {userRole === 'admin' && (
+                        <>
+                          <Button variant="ghost" size="sm" onClick={() => handleEdit(notice)}>
+                            <Icon name="Pencil" size={16} />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDelete(notice)}>
+                            <Icon name="Trash2" size={16} className="text-error" />
+                          </Button>
+                        </>
+                      )}
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleView(notice)}>
-                      <Icon name="Eye" size={16} />
-                    </Button>
-                    {userRole === 'admin' && (
-                      <>
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(notice)}>
-                          <Icon name="Pencil" size={16} />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(notice)}>
-                          <Icon name="Trash2" size={16} className="text-error" />
-                        </Button>
-                      </>
-                    )}
                   </div>
                 </div>
-              </div>
               ))}
             </div>
           )}

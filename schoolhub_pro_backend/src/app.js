@@ -68,6 +68,7 @@ app.use('/api/semesters', require('./routes/semesters.routes'));
 app.use('/api/grade-scale', require('./routes/gradeScale.routes'));
 app.use('/api/materials', require('./routes/materials.routes'));
 app.use('/api/timetables', require('./routes/timetables.routes'));
+app.use('/api/report-cards', require('./routes/reportCards.routes'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

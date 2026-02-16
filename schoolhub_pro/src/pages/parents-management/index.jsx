@@ -9,6 +9,7 @@ import ParentTableRow from './components/ParentTableRow';
 import AddParentModal from './components/AddParentModal';
 import ViewParentModal from './components/ViewParentModal';
 import parentService from '../../services/parentService';
+import authService from '../../services/authService';
 import studentService from '../../services/studentService';
 
 const ParentsManagement = () => {
@@ -26,6 +27,11 @@ const ParentsManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [toggleLoading, setToggleLoading] = useState(null);
+
+  // Check if current user is super_admin
+  const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isSuperAdmin = storedUser.role === 'super_admin';
 
   const breadcrumbItems = [
     { label: 'Dashboard', path: '/admin-dashboard' },
@@ -44,6 +50,7 @@ const ParentsManagement = () => {
       const data = await parentService.getAll();
       const formattedParents = data.map(parent => ({
         id: parent._id || parent.id,
+        userId: parent.userId,
         parentId: parent.parentId || `PAR${String(parent._id).slice(-3).toUpperCase()}`,
         name: parent.name,
         email: parent.email,
@@ -143,6 +150,21 @@ const ParentsManagement = () => {
     }
   };
 
+  const handleToggleActive = async (parent) => {
+    const action = parent.status === 'Active' ? 'deactivate' : 'activate';
+    if (!window.confirm(`Are you sure you want to ${action} ${parent.name}'s account?`)) return;
+    try {
+      setToggleLoading(parent.id);
+      await authService.toggleUserActive(parent.userId || parent.id);
+      fetchParents();
+    } catch (err) {
+      console.error('Error toggling user:', err);
+      alert(err.response?.data?.message || 'Failed to toggle account status');
+    } finally {
+      setToggleLoading(null);
+    }
+  };
+
   const LoadingSkeleton = () => (
     <div className="animate-pulse">
       {Array.from({ length: 5 }).map((_, i) => (
@@ -164,7 +186,7 @@ const ParentsManagement = () => {
         isCollapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
-      <AuthHeader onLogout={() => { localStorage.clear(); window.location.href = '/'; }} />
+      <AuthHeader onLogout={() => { window.location.href = '/'; }} />
 
       <main className="main-content">
         <div className="main-content-inner">
@@ -243,7 +265,9 @@ const ParentsManagement = () => {
                           parent={parent}
                           onView={handleView}
                           onEdit={handleEdit}
-                          onDelete={handleDeleteParent} />
+                          onDelete={handleDeleteParent}
+                          onToggleActive={isSuperAdmin ? handleToggleActive : undefined}
+                          toggleLoading={toggleLoading === parent?.id} />
                       )}
                     </tbody>
                   </table>

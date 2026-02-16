@@ -1,8 +1,9 @@
 import React from 'react';
 import Button from '../../../components/ui/Button';
+import Icon from '../../../components/AppIcon';
 import { getInitials, getAvatarColor, hasValidPhoto, DEFAULT_AVATAR_SM } from '../../../utils/avatar';
 
-const ParentTableRow = ({ parent, onView, onEdit, onDelete }) => {
+const ParentTableRow = ({ parent, onView, onEdit, onDelete, onToggleActive, toggleLoading }) => {
   const getStatusColor = (status) => {
     const colors = {
       'Active': 'bg-success/10 text-success',
@@ -56,6 +57,20 @@ const ParentTableRow = ({ parent, onView, onEdit, onDelete }) => {
         <div className="flex items-center gap-2 justify-end">
           <Button variant="ghost" size="icon" onClick={() => onView(parent)} iconName="Eye" />
           <Button variant="ghost" size="icon" onClick={() => onEdit(parent)} iconName="Edit" />
+          {onToggleActive && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onToggleActive(parent)}
+              disabled={toggleLoading}
+              title={parent?.status === 'Active' ? 'Deactivate account' : 'Activate account'}>
+              <Icon
+                name={parent?.status === 'Active' ? 'UserX' : 'UserCheck'}
+                size={16}
+                className={parent?.status === 'Active' ? 'text-warning' : 'text-success'}
+              />
+            </Button>
+          )}
           <Button variant="ghost" size="icon" onClick={() => onDelete(parent)} iconName="Trash2" className="text-error hover:text-error" />
         </div>
       </td>

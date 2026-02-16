@@ -12,8 +12,10 @@ import StudentCard from './components/StudentCard';
 import AddStudentModal from './components/AddStudentModal';
 import ViewStudentModal from './components/ViewStudentModal';
 import ManageClassModal from './components/ManageClassModal';
+import PromoteStudentsModal from './components/PromoteStudentsModal';
 import BulkActionsBar from './components/BulkActionsBar';
 import studentService from '../../services/studentService';
+import authService from '../../services/authService';
 import classService from '../../services/classService';
 
 const StudentsManagement = () => {
@@ -21,6 +23,7 @@ const StudentsManagement = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showManageClassModal, setShowManageClassModal] = useState(false);
+  const [showPromoteModal, setShowPromoteModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,6 +38,7 @@ const StudentsManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [toggleLoading, setToggleLoading] = useState(null);
 
   const [filters, setFilters] = useState({
     class: '',
@@ -53,6 +57,7 @@ const StudentsManagement = () => {
   // Role detection
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
   const userRole = storedUser.role === 'super_admin' ? 'admin' : (storedUser.role || 'student');
+  const isSuperAdmin = storedUser.role === 'super_admin';
   const SidebarComponent = userRole === 'admin' ? AdminSidebar : TeacherSidebar;
   const dashboardPath = userRole === 'admin' ? '/admin-dashboard' : '/teacher-dashboard';
 
@@ -252,6 +257,21 @@ const StudentsManagement = () => {
     }
   };
 
+  const handleToggleActive = async (student) => {
+    const action = student.status === 'Active' ? 'deactivate' : 'activate';
+    if (!window.confirm(`Are you sure you want to ${action} ${student.name}'s account?`)) return;
+    try {
+      setToggleLoading(student.id);
+      await authService.toggleUserActive(student.id);
+      fetchStudents();
+    } catch (err) {
+      console.error('Error toggling user:', err);
+      alert(err.response?.data?.message || 'Failed to toggle account status');
+    } finally {
+      setToggleLoading(null);
+    }
+  };
+
   const handleBulkDelete = async () => {
     if (!window.confirm(`Are you sure you want to delete ${selectedStudents.length} student(s)? This action cannot be undone.`)) return;
     try {
@@ -282,8 +302,23 @@ const StudentsManagement = () => {
   };
 
   const handlePromote = () => {
-    console.log('Promoting students:', selectedStudents);
-    setSelectedStudents([]);
+    setShowPromoteModal(true);
+  };
+
+  const handlePromoteSubmit = async ({ classId, sectionId }) => {
+    try {
+      setActionLoading(true);
+      await studentService.promoteStudents(selectedStudents, classId, sectionId);
+      setShowPromoteModal(false);
+      setSelectedStudents([]);
+      fetchStudents();
+      alert('Students promoted successfully!');
+    } catch (err) {
+      console.error('Error promoting students:', err);
+      alert('Failed to promote students. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleExport = async () => {
@@ -345,7 +380,7 @@ const StudentsManagement = () => {
                 Manage student records, enrollment, and academic assignments
               </p>
             </div>
-{userRole === 'admin' && (
+            {userRole === 'admin' && (
               <Button
                 onClick={() => {
                   setSelectedStudent(null);
@@ -438,7 +473,9 @@ const StudentsManagement = () => {
                             onEdit={handleEditStudent}
                             onView={handleViewStudent}
                             onManageClass={handleManageClass}
-                            onDelete={userRole === 'admin' ? handleDeleteStudent : undefined} />
+                            onDelete={userRole === 'admin' ? handleDeleteStudent : undefined}
+                            onToggleActive={isSuperAdmin ? handleToggleActive : undefined}
+                            toggleLoading={toggleLoading === student?.id} />
                         </tr>
                       )}
                     </tbody>
@@ -554,6 +591,14 @@ const StudentsManagement = () => {
         student={selectedStudent}
         classOptions={classOptions}
         sectionOptions={sectionOptions} />
+      <PromoteStudentsModal
+        isOpen={showPromoteModal}
+        onClose={() => setShowPromoteModal(false)}
+        onSubmit={handlePromoteSubmit}
+        count={selectedStudents.length}
+        classOptions={classOptions}
+        sectionOptions={sectionOptions}
+      />
       <BulkActionsBar
         selectedCount={selectedStudents?.length}
         onPromote={handlePromote}

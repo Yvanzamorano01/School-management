@@ -4,6 +4,8 @@ const Parent = require('../models/Parent');
 const ExamResult = require('../models/ExamResult');
 const Attendance = require('../models/Attendance');
 const StudentFee = require('../models/StudentFee');
+const StudentHistory = require('../models/StudentHistory');
+const AcademicYear = require('../models/AcademicYear');
 const paginate = require('../utils/pagination');
 
 // @desc    Get all students
@@ -233,19 +235,68 @@ exports.delete = async (req, res, next) => {
 // @access  Private
 exports.getResults = async (req, res, next) => {
   try {
-    const results = await ExamResult.find({ studentId: req.params.id })
+    const { academicYearId } = req.query;
+    let examIds = null;
+
+    // If academicYearId is provided, find all exams for that year
+    if (academicYearId) {
+      const Semester = require('../models/Semester');
+      const Exam = require('../models/Exam');
+
+      const semesters = await Semester.find({ academicYearId });
+      const semesterIds = semesters.map(s => s._id);
+
+      const exams = await Exam.find({ semesterId: { $in: semesterIds } });
+      examIds = exams.map(e => e._id);
+    }
+
+    const query = { studentId: req.params.id };
+    if (examIds) {
+      query.examId = { $in: examIds };
+    }
+
+    const results = await ExamResult.find(query)
       .populate({
         path: 'examId',
         populate: [
           { path: 'subjectId', select: 'name code' },
-          { path: 'classId', select: 'name' }
+          { path: 'classId', select: 'name' },
+          { path: 'semesterId', select: 'name academicYearId' }
         ]
       })
       .sort({ createdAt: -1 });
 
+    // Calculate rank among classmates
+    let rank = null;
+    let totalStudents = null;
+    const student = await Student.findById(req.params.id);
+    if (student && student.classId && results.length > 0) {
+      const resultExamIds = results.map(r => r.examId?._id).filter(Boolean);
+      if (resultExamIds.length > 0) {
+        const classmates = await Student.find({ classId: student.classId, status: 'Active' });
+        const classmateIds = classmates.map(s => s._id);
+
+        const allResults = await ExamResult.find({
+          studentId: { $in: classmateIds },
+          examId: { $in: resultExamIds }
+        });
+
+        const studentTotals = {};
+        for (const r of allResults) {
+          const sid = r.studentId.toString();
+          if (!studentTotals[sid]) studentTotals[sid] = 0;
+          studentTotals[sid] += r.marksObtained;
+        }
+
+        const sorted = Object.entries(studentTotals).sort((a, b) => b[1] - a[1]);
+        rank = sorted.findIndex(([sid]) => sid === req.params.id) + 1;
+        totalStudents = sorted.length;
+      }
+    }
+
     res.json({
       success: true,
-      data: results
+      data: { results, rank, totalStudents }
     });
   } catch (err) {
     next(err);
@@ -337,6 +388,86 @@ exports.getFees = async (req, res, next) => {
           balance
         }
       }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+// @desc    Promote students to a new class/section
+// @route   POST /api/students/promote
+// @access  Private/Admin
+exports.promoteStudents = async (req, res, next) => {
+  try {
+    const { studentIds, classId, sectionId, remarks } = req.body;
+
+    if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'No students selected for promotion' });
+    }
+
+    if (!classId || !sectionId) {
+      return res.status(400).json({ success: false, message: 'Target class and section are required' });
+    }
+
+    // Find the current active academic year to record history against
+    const activeYear = await AcademicYear.findOne({ status: { $in: ['Active', 'Completed'] } }).sort({ createdAt: -1 });
+    if (!activeYear) {
+      return res.status(400).json({ success: false, message: 'No active or completed academic year found to record history' });
+    }
+
+    // Find students to get their CURRENT class/section info
+    const students = await Student.find({ _id: { $in: studentIds } });
+
+    // Prepare history records
+    const historyRecords = students.map(student => ({
+      studentId: student._id,
+      academicYearId: activeYear._id,
+      classId: student.classId,
+      sectionId: student.sectionId,
+      status: 'Promoted',
+      remarks: remarks || `Promoted to new class on ${new Date().toLocaleDateString()}`,
+      promotionDate: new Date()
+    }));
+
+    // Save history records
+    if (historyRecords.length > 0) {
+      await StudentHistory.insertMany(historyRecords);
+    }
+
+    // Update students to new class
+    const result = await Student.updateMany(
+      { _id: { $in: studentIds } },
+      {
+        $set: {
+          classId,
+          sectionId
+        }
+      }
+    );
+
+    res.json({
+      success: true,
+      message: `Successfully promoted ${result.modifiedCount} student(s) and recorded history`,
+      data: { modifiedCount: result.modifiedCount }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Get student's academic history
+// @route   GET /api/students/:id/history
+// @access  Private
+exports.getHistory = async (req, res, next) => {
+  try {
+    const history = await StudentHistory.find({ studentId: req.params.id })
+      .populate('academicYearId', 'name')
+      .populate('classId', 'name code')
+      .populate('sectionId', 'name room')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: history
     });
   } catch (err) {
     next(err);

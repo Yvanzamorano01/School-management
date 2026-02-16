@@ -4,9 +4,12 @@ import AuthHeader from '../../components/navigation/AuthHeader';
 import Breadcrumb from '../../components/navigation/Breadcrumb';
 import Icon from '../../components/AppIcon';
 import studentService from '../../services/studentService';
+import { useSchoolSettings } from '../../contexts/SchoolSettingsContext';
+import { formatCurrency } from '../../utils/format';
 
 const MyFees = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const { currency } = useSchoolSettings();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [fees, setFees] = useState([]);
@@ -22,7 +25,7 @@ const MyFees = () => {
 
     useEffect(() => {
         fetchFees();
-    }, []);
+    }, [currency]);
 
     const fetchFees = async () => {
         try {
@@ -37,7 +40,8 @@ const MyFees = () => {
             }
 
             const feesData = await studentService.getStudentFees(profileId);
-            const feesList = Array.isArray(feesData) ? feesData : [];
+            // getStudentFees returns { fees: [...], summary } or array
+            const feesList = Array.isArray(feesData) ? feesData : (feesData?.fees || []);
             setFees(feesList);
 
             // Calculate summary
@@ -127,7 +131,7 @@ const MyFees = () => {
                                         </div>
                                         <span className="text-sm text-muted-foreground">Total Fees</span>
                                     </div>
-                                    <div className="text-2xl font-bold text-foreground">{summary.total.toLocaleString()} FCFA</div>
+                                    <div className="text-2xl font-bold text-foreground">{formatCurrency(summary.total, currency)}</div>
                                 </div>
 
                                 <div className="bg-card border border-border rounded-xl p-6">
@@ -137,7 +141,7 @@ const MyFees = () => {
                                         </div>
                                         <span className="text-sm text-muted-foreground">Paid</span>
                                     </div>
-                                    <div className="text-2xl font-bold text-success">{summary.paid.toLocaleString()} FCFA</div>
+                                    <div className="text-2xl font-bold text-success">{formatCurrency(summary.paid, currency)}</div>
                                 </div>
 
                                 <div className="bg-card border border-border rounded-xl p-6">
@@ -147,7 +151,7 @@ const MyFees = () => {
                                         </div>
                                         <span className="text-sm text-muted-foreground">Pending</span>
                                     </div>
-                                    <div className="text-2xl font-bold text-warning">{summary.pending.toLocaleString()} FCFA</div>
+                                    <div className="text-2xl font-bold text-warning">{formatCurrency(summary.pending, currency)}</div>
                                 </div>
                             </div>
 
@@ -208,13 +212,13 @@ const MyFees = () => {
                                                             </div>
                                                         </td>
                                                         <td className="py-4 px-4 text-foreground font-medium">
-                                                            {(fee.totalAmount || 0).toLocaleString()} FCFA
+                                                            {formatCurrency(fee.totalAmount || 0, currency)}
                                                         </td>
                                                         <td className="py-4 px-4 text-success font-medium">
-                                                            {(fee.paidAmount || 0).toLocaleString()} FCFA
+                                                            {formatCurrency(fee.paidAmount || 0, currency)}
                                                         </td>
                                                         <td className="py-4 px-4 text-warning font-medium">
-                                                            {((fee.totalAmount || 0) - (fee.paidAmount || 0)).toLocaleString()} FCFA
+                                                            {formatCurrency((fee.totalAmount || 0) - (fee.paidAmount || 0), currency)}
                                                         </td>
                                                         <td className="py-4 px-4 text-muted-foreground">
                                                             {formatDate(fee.dueDate)}

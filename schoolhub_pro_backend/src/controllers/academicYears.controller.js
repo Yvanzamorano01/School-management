@@ -1,5 +1,7 @@
 const AcademicYear = require('../models/AcademicYear');
 const Semester = require('../models/Semester');
+const Exam = require('../models/Exam');
+const ExamResult = require('../models/ExamResult');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -45,7 +47,20 @@ exports.delete = async (req, res, next) => {
   try {
     const year = await AcademicYear.findByIdAndDelete(req.params.id);
     if (!year) return res.status(404).json({ success: false, message: 'Academic year not found' });
+
+    // Cascade: delete exams and results for all semesters of this year
+    const semesters = await Semester.find({ academicYearId: req.params.id });
+    const semesterIds = semesters.map(s => s._id);
+    if (semesterIds.length > 0) {
+      const exams = await Exam.find({ semesterId: { $in: semesterIds } });
+      const examIds = exams.map(e => e._id);
+      if (examIds.length > 0) {
+        await ExamResult.deleteMany({ examId: { $in: examIds } });
+      }
+      await Exam.deleteMany({ semesterId: { $in: semesterIds } });
+    }
     await Semester.deleteMany({ academicYearId: req.params.id });
+
     res.json({ success: true, message: 'Academic year deleted' });
   } catch (err) { next(err); }
 };
@@ -53,7 +68,7 @@ exports.delete = async (req, res, next) => {
 exports.activate = async (req, res, next) => {
   try {
     // Deactivate all other years
-    await AcademicYear.updateMany({ status: 'Active' }, { status: 'Completed' });
+    await AcademicYear.updateMany({ _id: { $ne: req.params.id }, status: 'Active' }, { status: 'Completed' });
     const year = await AcademicYear.findByIdAndUpdate(req.params.id, { status: 'Active' }, { new: true });
     if (!year) return res.status(404).json({ success: false, message: 'Academic year not found' });
     res.json({ success: true, message: 'Academic year activated', data: year });

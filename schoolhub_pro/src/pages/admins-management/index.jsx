@@ -30,6 +30,11 @@ const AdminsManagement = () => {
   });
 
   const [actionLoading, setActionLoading] = useState(false);
+  const [toggleLoading, setToggleLoading] = useState(null);
+
+  // Check if current user is super_admin
+  const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isSuperAdmin = storedUser.role === 'super_admin';
 
   const [formData, setFormData] = useState({
     name: '',
@@ -54,6 +59,7 @@ const AdminsManagement = () => {
       const data = await adminService.getAll();
       const formatted = data.map(admin => ({
         id: admin._id || admin.id,
+        userId: admin.userId,
         adminId: admin.adminId || `ADM${String(admin._id).slice(-3).toUpperCase()}`,
         name: admin.name || admin.email?.split('@')[0],
         email: admin.email,
@@ -212,9 +218,25 @@ const AdminsManagement = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = '/';
+
+
+  const handleToggleActive = async (admin) => {
+    if (!admin.userId) {
+      alert('This admin has no user account linked');
+      return;
+    }
+    const action = admin.status === 'Active' ? 'deactivate' : 'activate';
+    if (!window.confirm(`Are you sure you want to ${action} ${admin.name}'s account?`)) return;
+    try {
+      setToggleLoading(admin.id);
+      await authService.toggleUserActive(admin.userId);
+      fetchAdmins();
+    } catch (err) {
+      console.error('Error toggling user:', err);
+      alert(err.response?.data?.message || 'Failed to toggle account status');
+    } finally {
+      setToggleLoading(null);
+    }
   };
 
   const breadcrumbItems = [
@@ -276,7 +298,7 @@ const AdminsManagement = () => {
   return (
     <div className="min-h-screen bg-background">
       <AdminSidebar isCollapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
-      <AuthHeader onLogout={handleLogout} />
+      <AuthHeader />
 
       <main className="main-content">
         <div className="main-content-inner">
@@ -389,6 +411,20 @@ const AdminsManagement = () => {
                           <div className="flex items-center justify-end gap-2">
                             <Button variant="ghost" size="icon" onClick={() => handleView(admin)}><Icon name="Eye" size={16} /></Button>
                             <Button variant="ghost" size="icon" onClick={() => handleEdit(admin)}><Icon name="Pencil" size={16} /></Button>
+                            {isSuperAdmin && admin?.role !== 'Super Admin' && admin?.userId && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleToggleActive(admin)}
+                                disabled={toggleLoading === admin?.id}
+                                title={admin?.status === 'Active' ? 'Deactivate account' : 'Activate account'}>
+                                <Icon
+                                  name={admin?.status === 'Active' ? 'UserX' : 'UserCheck'}
+                                  size={16}
+                                  className={admin?.status === 'Active' ? 'text-warning' : 'text-success'}
+                                />
+                              </Button>
+                            )}
                             <Button variant="ghost" size="icon" onClick={() => handleDelete(admin)} disabled={admin?.role === 'Super Admin'}>
                               <Icon name="Trash2" size={16} className={admin?.role === 'Super Admin' ? 'text-muted' : 'text-error'} />
                             </Button>

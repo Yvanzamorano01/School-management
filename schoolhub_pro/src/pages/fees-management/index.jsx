@@ -9,9 +9,12 @@ import FeeStructureTable from './components/FeeStructureTable';
 import FeeModal from './components/FeeModal';
 import StudentFeeAssignment from './components/StudentFeeAssignment';
 import FeeAnalytics from './components/FeeAnalytics';
+import AcademicYearFilter from '../../components/common/AcademicYearFilter';
 import feeTypeService from '../../services/feeTypeService';
 import paymentService from '../../services/paymentService';
 import classService from '../../services/classService';
+import { useSchoolSettings } from '../../contexts/SchoolSettingsContext';
+import { formatCurrency } from '../../utils/format';
 
 const LoadingSkeleton = () => (
   <div className="space-y-4 animate-pulse">
@@ -24,10 +27,12 @@ const LoadingSkeleton = () => (
 
 const FeesManagement = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { currency } = useSchoolSettings();
   const [activeTab, setActiveTab] = useState('structure');
   const [showFeeModal, setShowFeeModal] = useState(false);
   const [editingFee, setEditingFee] = useState(null);
   const [selectedClass, setSelectedClass] = useState('all');
+  const [selectedYear, setSelectedYear] = useState('');
   const [feeStructures, setFeeStructures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -42,8 +47,11 @@ const FeesManagement = () => {
   useEffect(() => {
     fetchFeeStructures();
     fetchClasses();
+  }, [currency]);
+
+  useEffect(() => {
     fetchSummaryStats();
-  }, []);
+  }, [selectedYear, currency]);
 
   const fetchClasses = async () => {
     try {
@@ -60,7 +68,10 @@ const FeesManagement = () => {
 
   const fetchSummaryStats = async () => {
     try {
-      const data = await paymentService.getStudentFees();
+      const params = {};
+      if (selectedYear) params.academicYearId = selectedYear;
+
+      const data = await paymentService.getStudentFees(params);
       const fees = Array.isArray(data) ? data : [];
       const totalAssigned = fees.reduce((sum, f) => sum + (f.totalAmount || 0), 0);
       const totalPaid = fees.reduce((sum, f) => sum + (f.paidAmount || 0), 0);
@@ -113,10 +124,10 @@ const FeesManagement = () => {
   return (
     <div className="min-h-screen bg-background">
       <AdminSidebar isCollapsed={sidebarCollapsed} onToggle={setSidebarCollapsed} />
-      
+
       <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        <AuthHeader 
-          userName="Admin User" 
+        <AuthHeader
+          userName="Admin User"
           userRole="Administrator"
           onLogout={() => console.log('Logout clicked')}
         />
@@ -128,9 +139,19 @@ const FeesManagement = () => {
               <h1 className="text-3xl font-bold text-foreground">Fees Management</h1>
               <p className="text-muted-foreground mt-1">Configure fee structures and manage student fee assignments</p>
             </div>
-            <Button iconName="Plus" onClick={handleAddFee}>
-              Add Fee Structure
-            </Button>
+            <div className="flex items-center gap-3">
+              <div className="w-48">
+                <AcademicYearFilter
+                  selectedYear={selectedYear}
+                  onChange={setSelectedYear}
+                  label=""
+                  className="mb-0"
+                />
+              </div>
+              <Button iconName="Plus" onClick={handleAddFee}>
+                Add Fee Structure
+              </Button>
+            </div>
           </div>
 
           <div className="bg-surface rounded-xl border border-border">
@@ -140,10 +161,9 @@ const FeesManagement = () => {
                   <button
                     key={tab?.id}
                     onClick={() => setActiveTab(tab?.id)}
-                    className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
-                      activeTab === tab?.id
-                        ? 'text-primary border-b-2 border-primary' :'text-muted-foreground hover:text-foreground'
-                    }`}
+                    className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors whitespace-nowrap ${activeTab === tab?.id
+                      ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'
+                      }`}
                   >
                     <Icon name={tab?.icon} size={18} />
                     {tab?.label}
@@ -183,6 +203,7 @@ const FeesManagement = () => {
                     <FeeStructureTable
                       data={feeStructures}
                       onEdit={handleEditFee}
+                      currency={currency}
                     />
                   )}
                 </div>
@@ -209,7 +230,7 @@ const FeesManagement = () => {
                   <p className="text-sm text-muted-foreground">All time</p>
                 </div>
               </div>
-              <div className="text-2xl font-bold text-foreground">{summaryStats.totalCollected.toLocaleString()} FCFA</div>
+              <div className="text-2xl font-bold text-foreground">{formatCurrency(summaryStats.totalCollected, currency)}</div>
             </div>
 
             <div className="bg-surface rounded-xl border border-border p-6">
@@ -222,7 +243,7 @@ const FeesManagement = () => {
                   <p className="text-sm text-muted-foreground">Outstanding</p>
                 </div>
               </div>
-              <div className="text-2xl font-bold text-foreground">{summaryStats.totalPending.toLocaleString()} FCFA</div>
+              <div className="text-2xl font-bold text-foreground">{formatCurrency(summaryStats.totalPending, currency)}</div>
               <div className="text-sm text-muted-foreground mt-1">{summaryStats.pendingStudents} students</div>
             </div>
 

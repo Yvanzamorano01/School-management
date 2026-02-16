@@ -10,6 +10,7 @@ import AddTeacherModal from './components/AddTeacherModal';
 import ViewTeacherModal from './components/ViewTeacherModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
 import teacherService from '../../services/teacherService';
+import authService from '../../services/authService';
 import classService from '../../services/classService';
 import subjectService from '../../services/subjectService';
 
@@ -31,6 +32,11 @@ const TeachersManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [toggleLoading, setToggleLoading] = useState(null);
+
+  // Check if current user is super_admin
+  const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isSuperAdmin = storedUser.role === 'super_admin';
 
   const [filters, setFilters] = useState({
     subject: '',
@@ -77,6 +83,7 @@ const TeachersManagement = () => {
       // Transform API response to match component format
       const formattedTeachers = data.map(teacher => ({
         id: teacher._id || teacher.id,
+        userId: teacher.userId,
         teacherId: teacher.teacherId,
         name: teacher.name || `${teacher.firstName} ${teacher.lastName}`,
         email: teacher.email,
@@ -200,6 +207,21 @@ const TeachersManagement = () => {
 
   const handleLogout = () => {
     console.log('Logout triggered');
+  };
+
+  const handleToggleActive = async (teacher) => {
+    const action = teacher.status === 'Active' ? 'deactivate' : 'activate';
+    if (!window.confirm(`Are you sure you want to ${action} ${teacher.name}'s account?`)) return;
+    try {
+      setToggleLoading(teacher.id);
+      await authService.toggleUserActive(teacher.userId || teacher.id);
+      fetchTeachers();
+    } catch (err) {
+      console.error('Error toggling user:', err);
+      alert(err.response?.data?.message || 'Failed to toggle account status');
+    } finally {
+      setToggleLoading(null);
+    }
   };
 
   // Loading skeleton component
@@ -362,7 +384,9 @@ const TeachersManagement = () => {
                           teacher={teacher}
                           onView={handleView}
                           onEdit={handleEdit}
-                          onDelete={handleDelete} />
+                          onDelete={handleDelete}
+                          onToggleActive={isSuperAdmin ? handleToggleActive : undefined}
+                          toggleLoading={toggleLoading === teacher?.id} />
                       )}
                     </tbody>
                   </table>

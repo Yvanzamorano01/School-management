@@ -40,7 +40,7 @@ const examSchema = new mongoose.Schema({
   // Status
   status: {
     type: String,
-    enum: ['upcoming', 'completed', 'cancelled'],
+    enum: ['upcoming', 'ongoing', 'completed', 'cancelled'],
     default: 'upcoming'
   }
 }, {

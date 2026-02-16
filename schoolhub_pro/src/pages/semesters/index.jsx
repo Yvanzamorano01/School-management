@@ -105,7 +105,7 @@ const Semesters = () => {
 
   const handleSetActive = async (semester) => {
     try {
-      await semesterService.update(semester.id, { status: 'Active' });
+      await semesterService.activate(semester.id);
       fetchData();
     } catch (err) {
       console.error('Failed to set semester as active:', err);
@@ -142,10 +142,7 @@ const Semesters = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = '/';
-  };
+
 
   const breadcrumbItems = [
     { label: 'Dashboard', path: '/admin-dashboard' },
@@ -217,7 +214,7 @@ const Semesters = () => {
   return (
     <div className="min-h-screen bg-background">
       <AdminSidebar isCollapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
-      <AuthHeader onLogout={handleLogout} />
+      <AuthHeader />
 
       <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <div className="main-content-inner">
@@ -331,9 +328,8 @@ const Semesters = () => {
                       <tr key={semester.id} className="hover:bg-muted/30 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                              semester.status === 'Active' ? 'bg-success/10' : 'bg-muted'
-                            }`}>
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${semester.status === 'Active' ? 'bg-success/10' : 'bg-muted'
+                              }`}>
                               <Icon
                                 name="CalendarDays"
                                 size={20}

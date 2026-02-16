@@ -226,4 +226,10 @@ router.post('/verify-password', auth, [
  */
 router.post('/logout', auth, controller.logout);
 
+// User stats for admin dashboard
+router.get('/user-stats', auth, controller.getUserStats);
+
+// Toggle user active status (super_admin only)
+router.patch('/users/:id/toggle-active', auth, controller.toggleUserActive);
+
 module.exports = router;

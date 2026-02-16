@@ -1,7 +1,8 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { formatCurrency } from '../../../utils/format';
 
-const RevenueChart = ({ data }) => {
+const RevenueChart = ({ data, currency }) => {
   return (
     <div className="bg-card border border-border rounded-xl p-4 md:p-6 shadow-elevation-1">
       <div className="mb-4 md:mb-6">
@@ -18,31 +19,31 @@ const RevenueChart = ({ data }) => {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-            <XAxis 
-              dataKey="month" 
+            <XAxis
+              dataKey="month"
               stroke="var(--color-muted-foreground)"
               style={{ fontSize: '12px' }}
             />
-            <YAxis 
+            <YAxis
               stroke="var(--color-muted-foreground)"
               style={{ fontSize: '12px' }}
               tickFormatter={(value) => value >= 1000000 ? `${value / 1000000}M` : value >= 1000 ? `${value / 1000}k` : value}
             />
-            <Tooltip 
+            <Tooltip
               contentStyle={{
                 backgroundColor: 'var(--color-popover)',
                 border: '1px solid var(--color-border)',
                 borderRadius: '8px',
                 fontSize: '14px'
               }}
-              formatter={(value) => [`${value?.toLocaleString()} FCFA`, 'Revenue']}
+              formatter={(value) => [formatCurrency(value, currency), 'Revenue']}
             />
-            <Area 
-              type="monotone" 
-              dataKey="revenue" 
-              stroke="var(--color-primary)" 
+            <Area
+              type="monotone"
+              dataKey="revenue"
+              stroke="var(--color-primary)"
               strokeWidth={2}
-              fill="url(#revenueGradient)" 
+              fill="url(#revenueGradient)"
             />
           </AreaChart>
         </ResponsiveContainer>

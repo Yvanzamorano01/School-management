@@ -9,15 +9,10 @@ import PerformanceAnalytics from './components/PerformanceAnalytics';
 import ResultsTable from './components/ResultsTable';
 import SubjectDetailCard from './components/SubjectDetailCard';
 import ExportResults from './components/ExportResults';
+import AcademicYearFilter from '../../components/common/AcademicYearFilter';
 import Icon from '../../components/AppIcon';
 import resultsService from '../../services/resultsService';
-
-const GPA_MAP = {
-  'A+': 4.0, 'A': 4.0, 'A-': 3.7,
-  'B+': 3.3, 'B': 3.0, 'B-': 2.7,
-  'C+': 2.3, 'C': 2.0, 'C-': 1.7,
-  'D': 1.0, 'F': 0.0
-};
+import api from '../../services/api';
 
 const getPerformanceLevel = (pct) => {
   if (pct >= 80) return 'excellent';
@@ -29,6 +24,7 @@ const getPerformanceLevel = (pct) => {
 const MyResults = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [selectedSemester, setSelectedSemester] = useState('all');
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [viewMode, setViewMode] = useState('table');
   const [loading, setLoading] = useState(true);
@@ -40,25 +36,35 @@ const MyResults = () => {
   const [semesters, setSemesters] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [rawResults, setRawResults] = useState([]);
+  const [gradeScale, setGradeScale] = useState([]);
+  const [rankInfo, setRankInfo] = useState({ rank: '-', totalStudents: '-' });
 
   useEffect(() => {
     fetchData();
-  }, [selectedSemester]);
+  }, [selectedSemester, selectedAcademicYear]);
 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const [semestersRes, subjectsRes, resultsRes] = await Promise.all([
+      const [semestersRes, subjectsRes, resultsData, gradeScaleRes] = await Promise.all([
         resultsService.getSemesters(),
         resultsService.getSubjects(),
-        resultsService.getStudentResults(selectedSemester)
+        resultsService.getStudentResults(selectedSemester, selectedAcademicYear),
+        api.get('/grade-scale').then(res => Array.isArray(res.data) ? res.data : []).catch(() => [])
       ]);
 
       setSemesters(semestersRes || []);
       setSubjects(subjectsRes || []);
-      setRawResults(resultsRes || []);
+      setGradeScale(gradeScaleRes.sort((a, b) => b.minScore - a.minScore));
+
+      // resultsData is { results: [...], rank, totalStudents }
+      setRawResults(resultsData.results || []);
+      setRankInfo({
+        rank: resultsData.rank || '-',
+        totalStudents: resultsData.totalStudents || '-'
+      });
     } catch (err) {
       console.error('Error fetching results data:', err);
       setError(err.message || 'Failed to load results data');
@@ -70,6 +76,10 @@ const MyResults = () => {
     }
   };
 
+  // Build dynamic GPA map from grade scale
+  const gpaMap = {};
+  gradeScale.forEach(g => { gpaMap[g.grade] = g.gpaPoints; });
+
   // Transform raw ExamResult data into component-friendly format
   const transformedResults = rawResults.map(r => ({
     id: r._id,
@@ -79,7 +89,7 @@ const MyResults = () => {
     marks: r.marksObtained || 0,
     totalMarks: r.examId?.totalMarks || 100,
     grade: r.grade || 'F',
-    gpa: GPA_MAP[r.grade] ?? 0.0,
+    gpa: gpaMap[r.grade] ?? 0.0,
     percentage: r.percentage || 0,
     performance: getPerformanceLevel(r.percentage || 0),
     isPassed: r.isPassed,
@@ -93,16 +103,38 @@ const MyResults = () => {
     ? transformedResults
     : transformedResults.filter(r => String(r.subjectId) === String(selectedSubject));
 
-  // Build performance stats from transformed results
+  // Build performance stats from transformed results (weighted average + GPA by subject)
   const performanceStats = (() => {
     if (transformedResults.length === 0) return {};
-    const avg = Math.round(transformedResults.reduce((sum, r) => sum + r.percentage, 0) / transformedResults.length);
+
+    // Weighted average (like report card)
+    const totalObtained = transformedResults.reduce((sum, r) => sum + r.marks, 0);
+    const totalMax = transformedResults.reduce((sum, r) => sum + r.totalMarks, 0);
+    const avg = totalMax > 0 ? Math.round((totalObtained / totalMax) * 100) : 0;
+
     const passed = transformedResults.filter(r => r.isPassed).length;
-    const totalGpa = transformedResults.reduce((sum, r) => sum + r.gpa, 0) / transformedResults.length;
+
+    // GPA calculated per subject then averaged (like report card)
+    const subjectAgg = {};
+    transformedResults.forEach(r => {
+      const key = r.subjectId || r.subject;
+      if (!subjectAgg[key]) subjectAgg[key] = { totalMarks: 0, totalMaxMarks: 0 };
+      subjectAgg[key].totalMarks += r.marks;
+      subjectAgg[key].totalMaxMarks += r.totalMarks;
+    });
+    const subjectGpaValues = Object.values(subjectAgg).map(s => {
+      const pct = s.totalMaxMarks > 0 ? (s.totalMarks / s.totalMaxMarks) * 100 : 0;
+      const matched = gradeScale.find(g => pct >= g.minScore && pct <= g.maxScore);
+      return matched?.gpaPoints || 0;
+    });
+    const totalGpa = subjectGpaValues.length > 0
+      ? subjectGpaValues.reduce((sum, g) => sum + g, 0) / subjectGpaValues.length
+      : 0;
+
     return {
       gpa: totalGpa.toFixed(2),
-      rank: '-',
-      totalStudents: '-',
+      rank: rankInfo.rank,
+      totalStudents: rankInfo.totalStudents,
       passed,
       total: transformedResults.length,
       average: avg
@@ -172,7 +204,7 @@ const MyResults = () => {
         total: r.totalMarks
       });
       // Keep best grade
-      if ((GPA_MAP[r.grade] || 0) > (GPA_MAP[map[key].grade] || 0)) {
+      if ((gpaMap[r.grade] || 0) > (gpaMap[map[key].grade] || 0)) {
         map[key].grade = r.grade;
         map[key].gpa = r.gpa;
       }
@@ -293,6 +325,14 @@ const MyResults = () => {
 
           <div className="bg-card rounded-xl p-4 md:p-6 border border-border mb-6 md:mb-8">
             <div className="flex flex-col lg:flex-row lg:items-end gap-4 mb-6">
+              <div className="w-full lg:w-48">
+                <AcademicYearFilter
+                  selectedYear={selectedAcademicYear}
+                  onChange={setSelectedAcademicYear}
+                  label="Academic Year"
+                />
+              </div>
+
               <SemesterSelector
                 semesters={semesters}
                 selectedSemester={selectedSemester}
@@ -308,18 +348,16 @@ const MyResults = () => {
               <div className="flex items-center gap-2 ml-auto">
                 <button
                   onClick={() => setViewMode('table')}
-                  className={`p-2 rounded-lg transition-smooth ${
-                    viewMode === 'table' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
-                  }`}
+                  className={`p-2 rounded-lg transition-smooth ${viewMode === 'table' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
                   aria-label="Table view"
                 >
                   <Icon name="Table" size={20} />
                 </button>
                 <button
                   onClick={() => setViewMode('cards')}
-                  className={`p-2 rounded-lg transition-smooth ${
-                    viewMode === 'cards' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
-                  }`}
+                  className={`p-2 rounded-lg transition-smooth ${viewMode === 'cards' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
                   aria-label="Card view"
                 >
                   <Icon name="LayoutGrid" size={20} />
@@ -362,16 +400,25 @@ const MyResults = () => {
               <div>
                 <h3 className="text-base md:text-lg font-semibold text-foreground mb-2">Grading System Information</h3>
                 <div className="space-y-2 text-xs md:text-sm text-muted-foreground">
-                  <p>• A+ (95-100): 4.0 GPA - Excellent</p>
-                  <p>• A (90-94): 4.0 GPA - Tres Bien</p>
-                  <p>• A- (85-89): 3.7 GPA - Tres Bien</p>
-                  <p>• B+ (80-84): 3.3 GPA - Bien</p>
-                  <p>• B (75-79): 3.0 GPA - Bien</p>
-                  <p>• B- (70-74): 2.7 GPA - Assez Bien</p>
-                  <p>• C+ (65-69): 2.3 GPA - Passable</p>
-                  <p>• C (60-64): 2.0 GPA - Passable</p>
-                  <p>• D (50-54): 1.0 GPA - Mediocre</p>
-                  <p>• F (0-49): 0.0 GPA - Echec</p>
+                  {gradeScale.length > 0 ? (
+                    gradeScale.map(g => (
+                      <p key={g.grade}>• {g.grade} ({g.minScore}-{g.maxScore}): {g.gpaPoints} GPA{g.description ? ` - ${g.description}` : ''}</p>
+                    ))
+                  ) : (
+                    <>
+                      <p>• A+ (95-100): 4.0 GPA - Excellent</p>
+                      <p>• A (90-94): 4.0 GPA - Tres Bien</p>
+                      <p>• A- (85-89): 3.7 GPA - Tres Bien</p>
+                      <p>• B+ (80-84): 3.3 GPA - Bien</p>
+                      <p>• B (75-79): 3.0 GPA - Bien</p>
+                      <p>• B- (70-74): 2.7 GPA - Assez Bien</p>
+                      <p>• C+ (65-69): 2.3 GPA - Passable</p>
+                      <p>• C (60-64): 2.0 GPA - Passable</p>
+                      <p>• C- (55-59): 1.7 GPA - Insuffisant</p>
+                      <p>• D (50-54): 1.0 GPA - Mediocre</p>
+                      <p>• F (0-49): 0.0 GPA - Echec</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

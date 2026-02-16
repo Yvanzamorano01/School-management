@@ -9,9 +9,12 @@ import AddFeeTypeModal from './components/AddFeeTypeModal';
 import ViewFeeTypeModal from './components/ViewFeeTypeModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
 import feeTypeService from '../../services/feeTypeService';
+import { useSchoolSettings } from '../../contexts/SchoolSettingsContext';
+import { formatCurrency } from '../../utils/format';
 
 const FeeTypesManagement = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { currency } = useSchoolSettings();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -32,7 +35,7 @@ const FeeTypesManagement = () => {
 
   useEffect(() => {
     fetchFeeTypes();
-  }, []);
+  }, [currency]);
 
   const fetchFeeTypes = async () => {
     try {
@@ -136,7 +139,7 @@ const FeeTypesManagement = () => {
         <AuthHeader
           userName={userName}
           userRole={userRole === 'admin' ? 'Administrator' : userRole}
-          onLogout={() => { localStorage.clear(); window.location.href = '/login'; }}
+          onLogout={() => { window.location.href = '/login'; }}
         />
         <Breadcrumb items={breadcrumbItems} />
 
@@ -194,7 +197,7 @@ const FeeTypesManagement = () => {
                   <p className="text-sm text-muted-foreground">Combined fees</p>
                 </div>
               </div>
-              <div className="text-2xl font-bold text-foreground">{totalAmount?.toLocaleString()} FCFA</div>
+              <div className="text-2xl font-bold text-foreground">{formatCurrency(totalAmount, currency)}</div>
             </div>
           </div>
 
@@ -221,6 +224,7 @@ const FeeTypesManagement = () => {
                     onView={handleViewFeeType}
                     onEdit={handleEditFeeType}
                     onDelete={handleDeleteFeeType}
+                    currency={currency}
                   />
                 ))}
               </div>

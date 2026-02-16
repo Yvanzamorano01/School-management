@@ -8,7 +8,7 @@ const FilterPanel = ({ filters, academicYears = [], onFilterChange, onReset }) =
   const academicYearOptions = [
     { value: 'all', label: 'All Academic Years' },
     ...academicYears.map(y => ({
-      value: y.name,
+      value: y.id,
       label: `${y.name}${y.isActive ? ' (Active)' : ''}`
     }))
   ];
@@ -20,7 +20,7 @@ const FilterPanel = ({ filters, academicYears = [], onFilterChange, onReset }) =
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-6">
+    <div className="bg-card border border-border rounded-lg p-6 mb-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Search */}
         <div className="md:col-span-1">

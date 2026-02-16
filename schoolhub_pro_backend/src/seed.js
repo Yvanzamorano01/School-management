@@ -609,8 +609,6 @@ const seedData = async () => {
     console.log('13/20 - Exams...');
     const examBulk = [];
     for (const sub of subjectDocs) {
-      const classCode = classDocs.find(c => c._id.toString() === sub.classId.toString()).code;
-
       // Partiel S1 (completed)
       examBulk.push({
         title: `Partiel S1 - ${sub.name}`,
@@ -625,12 +623,19 @@ const seedData = async () => {
         date: new Date('2025-02-' + String(randomInt(1, 10)).padStart(2, '0')),
         duration: 120, totalMarks: 100, passingMarks: 50, status: 'completed'
       });
-      // Partiel S2 (upcoming)
+      // Partiel S2 (completed)
       examBulk.push({
         title: `Partiel S2 - ${sub.name}`,
         subjectId: sub._id, classId: sub.classId, semesterId: sem2._id,
         date: new Date('2025-04-' + String(randomInt(14, 25)).padStart(2, '0')),
-        duration: 90, totalMarks: 100, passingMarks: 50, status: 'upcoming'
+        duration: 90, totalMarks: 100, passingMarks: 50, status: 'completed'
+      });
+      // Examen Final S2 (upcoming — pas encore passe)
+      examBulk.push({
+        title: `Examen Final S2 - ${sub.name}`,
+        subjectId: sub._id, classId: sub.classId, semesterId: sem2._id,
+        date: new Date('2025-06-' + String(randomInt(10, 25)).padStart(2, '0')),
+        duration: 120, totalMarks: 100, passingMarks: 50, status: 'upcoming'
       });
     }
     const examDocs = await Exam.insertMany(examBulk);
@@ -642,11 +647,22 @@ const seedData = async () => {
     let resultsBatch = [];
     let resultsCount = 0;
 
+    // Assign a stable "talent" score per student (30-80 base) so performance is consistent across exams
+    const studentTalent = {};
+    for (const s of allStudents) {
+      studentTalent[s._id.toString()] = 30 + Math.floor(Math.random() * 50);
+    }
+
     for (const exam of completedExams) {
       const examStudents = allStudents.filter(s => s.classId.toString() === exam.classId.toString());
+      const isS2 = exam.semesterId.toString() === sem2._id.toString();
+
       for (const student of examStudents) {
-        // Realistic distribution around 55-65
-        const marks = Math.min(100, Math.max(5, Math.floor(55 + (Math.random() + Math.random() + Math.random() - 1.5) * 25)));
+        const sid = student._id.toString();
+        const base = studentTalent[sid];
+        // Add random noise (-15 to +15) and a small S2 improvement (+3)
+        const noise = Math.floor((Math.random() + Math.random() - 1) * 15);
+        const marks = Math.min(100, Math.max(5, base + noise + (isS2 ? 3 : 0)));
         const percentage = (marks / exam.totalMarks) * 100;
         resultsBatch.push({
           examId: exam._id, studentId: student._id,
@@ -667,7 +683,10 @@ const seedData = async () => {
 
     // ==================== 15. ATTENDANCE ====================
     console.log('15/20 - Attendance...');
-    const schoolDays = generateSchoolDays(new Date('2025-01-06'), 20);
+    // S1 attendance (Jan 2025) + S2 attendance (Mar-Apr 2025)
+    const schoolDaysS1 = generateSchoolDays(new Date('2025-01-06'), 20);
+    const schoolDaysS2 = generateSchoolDays(new Date('2025-03-03'), 25);
+    const schoolDays = [...schoolDaysS1, ...schoolDaysS2];
     const attendanceBulk = [];
 
     for (const section of sectionDocs) {

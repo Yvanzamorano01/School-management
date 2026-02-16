@@ -33,10 +33,20 @@ const gradeScaleSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Validation: maxScore must be >= minScore
-gradeScaleSchema.pre('save', function() {
+// Validation: maxScore must be >= minScore, and no overlapping ranges
+gradeScaleSchema.pre('save', async function() {
   if (this.maxScore < this.minScore) {
     throw new Error('Maximum score must be greater than or equal to minimum score');
+  }
+
+  // Check for overlapping score ranges with existing grades
+  const overlapping = await mongoose.model('GradeScale').findOne({
+    _id: { $ne: this._id },
+    minScore: { $lte: this.maxScore },
+    maxScore: { $gte: this.minScore }
+  });
+  if (overlapping) {
+    throw new Error(`Score range ${this.minScore}-${this.maxScore} overlaps with grade ${overlapping.grade} (${overlapping.minScore}-${overlapping.maxScore})`);
   }
 });
 

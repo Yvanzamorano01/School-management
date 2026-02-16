@@ -10,9 +10,12 @@ import AssignFeeModal from './components/AssignFeeModal';
 import PaymentModal from './components/PaymentModal';
 import paymentService from '../../services/paymentService';
 import classService from '../../services/classService';
+import { useSchoolSettings } from '../../contexts/SchoolSettingsContext';
+import { formatCurrency } from '../../utils/format';
 
 const StudentFeesManagement = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { currency } = useSchoolSettings();
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -44,7 +47,7 @@ const StudentFeesManagement = () => {
   useEffect(() => {
     fetchStudentFees();
     fetchClasses();
-  }, []);
+  }, [currency]);
 
   const fetchClasses = async () => {
     try {
@@ -102,7 +105,7 @@ const StudentFeesManagement = () => {
         ...s,
         status: s.paidAmount >= s.totalAmount ? 'Paid'
           : s.paidAmount > 0 ? 'Partially Paid'
-          : 'Unpaid'
+            : 'Unpaid'
       }));
 
       setStudentFees(formatted);
@@ -145,7 +148,7 @@ const StudentFeesManagement = () => {
     const matchesClass = filterClass === 'all' || student?.class?.toLowerCase()?.includes(filterClass?.replace('-', ' '));
     const matchesStatus = filterStatus === 'all' || student?.status === filterStatus;
     const matchesSearch = student?.studentName?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
-                          student?.studentId?.toLowerCase()?.includes(searchQuery?.toLowerCase());
+      student?.studentId?.toLowerCase()?.includes(searchQuery?.toLowerCase());
     return matchesClass && matchesStatus && matchesSearch;
   });
 
@@ -186,15 +189,12 @@ const StudentFeesManagement = () => {
   return (
     <div className="min-h-screen bg-background">
       <AdminSidebar isCollapsed={sidebarCollapsed} onToggle={setSidebarCollapsed} />
-      
+
       <div className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        <AuthHeader 
+        <AuthHeader
           userName={userName}
           userRole={userRole === 'admin' ? 'Administrator' : userRole}
-          onLogout={() => {
-            localStorage.clear();
-            window.location.href = '/login';
-          }}
+          onLogout={() => { window.location.href = '/login'; }}
         />
         <Breadcrumb items={breadcrumbItems} />
 
@@ -229,136 +229,137 @@ const StudentFeesManagement = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-surface rounded-xl border border-border p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Icon name="Users" size={20} color="var(--color-primary)" />
+                <div className="bg-surface rounded-xl border border-border p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Icon name="Users" size={20} color="var(--color-primary)" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Total Students</h3>
+                      <p className="text-sm text-muted-foreground">Enrolled</p>
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">{totalStudents}</div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Total Students</h3>
-                  <p className="text-sm text-muted-foreground">Enrolled</p>
+
+                <div className="bg-surface rounded-xl border border-border p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                      <Icon name="CheckCircle" size={20} color="var(--color-success)" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Paid</h3>
+                      <p className="text-sm text-muted-foreground">Fully paid</p>
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">{paidStudents}</div>
+                </div>
+
+                <div className="bg-surface rounded-xl border border-border p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                      <Icon name="Clock" size={20} color="var(--color-warning)" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Partially Paid</h3>
+                      <p className="text-sm text-muted-foreground">In progress</p>
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">{partiallyPaidStudents}</div>
+                </div>
+
+                <div className="bg-surface rounded-xl border border-border p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center">
+                      <Icon name="XCircle" size={20} color="var(--color-error)" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Unpaid</h3>
+                      <p className="text-sm text-muted-foreground">Outstanding</p>
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">{unpaidStudents}</div>
                 </div>
               </div>
-              <div className="text-2xl font-bold text-foreground">{totalStudents}</div>
-            </div>
 
-            <div className="bg-surface rounded-xl border border-border p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-                  <Icon name="CheckCircle" size={20} color="var(--color-success)" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-surface rounded-xl border border-border p-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Icon name="DollarSign" size={24} color="var(--color-success)" />
+                    <h3 className="font-semibold text-foreground">Total Collected</h3>
+                  </div>
+                  <div className="text-3xl font-bold text-success">{formatCurrency(totalCollected, currency)}</div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Paid</h3>
-                  <p className="text-sm text-muted-foreground">Fully paid</p>
-                </div>
-              </div>
-              <div className="text-2xl font-bold text-foreground">{paidStudents}</div>
-            </div>
 
-            <div className="bg-surface rounded-xl border border-border p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                  <Icon name="Clock" size={20} color="var(--color-warning)" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Partially Paid</h3>
-                  <p className="text-sm text-muted-foreground">In progress</p>
+                <div className="bg-surface rounded-xl border border-border p-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Icon name="AlertCircle" size={24} color="var(--color-warning)" />
+                    <h3 className="font-semibold text-foreground">Total Pending</h3>
+                  </div>
+                  <div className="text-3xl font-bold text-warning">{formatCurrency(totalPending, currency)}</div>
                 </div>
               </div>
-              <div className="text-2xl font-bold text-foreground">{partiallyPaidStudents}</div>
-            </div>
 
-            <div className="bg-surface rounded-xl border border-border p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center">
-                  <Icon name="XCircle" size={20} color="var(--color-error)" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Unpaid</h3>
-                  <p className="text-sm text-muted-foreground">Outstanding</p>
-                </div>
-              </div>
-              <div className="text-2xl font-bold text-foreground">{unpaidStudents}</div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-surface rounded-xl border border-border p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <Icon name="DollarSign" size={24} color="var(--color-success)" />
-                <h3 className="font-semibold text-foreground">Total Collected</h3>
-              </div>
-              <div className="text-3xl font-bold text-success">{totalCollected?.toLocaleString()} FCFA</div>
-            </div>
-
-            <div className="bg-surface rounded-xl border border-border p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <Icon name="AlertCircle" size={24} color="var(--color-warning)" />
-                <h3 className="font-semibold text-foreground">Total Pending</h3>
-              </div>
-              <div className="text-3xl font-bold text-warning">{totalPending?.toLocaleString()} FCFA</div>
-            </div>
-          </div>
-
-          <div className="bg-surface rounded-xl border border-border p-6">
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="flex-1 relative">
-                <Icon name="Search" size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search by student name or ID..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e?.target?.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-              </div>
-              <Select
-                options={classOptions}
-                value={filterClass}
-                onChange={setFilterClass}
-                className="w-full md:w-48"
-              />
-              <Select
-                options={statusOptions}
-                value={filterStatus}
-                onChange={setFilterStatus}
-                className="w-full md:w-48"
-              />
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">STUDENT</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">CLASS</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">ASSIGNED FEES</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">TOTAL AMOUNT</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">PAID</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">PENDING</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">STATUS</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredStudents?.map((student) => (
-                    <StudentFeeRow
-                      key={student?.id}
-                      student={student}
-                      onRecordPayment={handleRecordPayment}
+              <div className="bg-surface rounded-xl border border-border p-6">
+                <div className="flex flex-col md:flex-row gap-4 mb-6">
+                  <div className="flex-1 relative">
+                    <Icon name="Search" size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search by student name or ID..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e?.target?.value)}
+                      className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                     />
-                  ))}
-                </tbody>
-              </table>
-
-              {filteredStudents?.length === 0 && (
-                <div className="text-center py-12">
-                  <Icon name="Search" size={48} className="mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No students found</p>
+                  </div>
+                  <Select
+                    options={classOptions}
+                    value={filterClass}
+                    onChange={setFilterClass}
+                    className="w-full md:w-48"
+                  />
+                  <Select
+                    options={statusOptions}
+                    value={filterStatus}
+                    onChange={setFilterStatus}
+                    className="w-full md:w-48"
+                  />
                 </div>
-              )}
-            </div>
-          </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">STUDENT</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">CLASS</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">ASSIGNED FEES</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">TOTAL AMOUNT</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">PAID</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">PENDING</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">STATUS</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredStudents?.map((student) => (
+                        <StudentFeeRow
+                          key={student?.id}
+                          student={student}
+                          onRecordPayment={handleRecordPayment}
+                          currency={currency}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {filteredStudents?.length === 0 && (
+                    <div className="text-center py-12">
+                      <Icon name="Search" size={48} className="mx-auto text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">No students found</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -381,6 +382,7 @@ const StudentFeesManagement = () => {
           }}
           onSave={handleSavePayment}
           student={selectedStudent}
+          currency={currency}
         />
       )}
     </div>

@@ -94,13 +94,13 @@ const SectionsManagement = () => {
 
   const filteredSections = sections?.filter(section => {
     const matchesSearch = section?.name?.toLowerCase()?.includes(filters?.search?.toLowerCase()) ||
-                         section?.className?.toLowerCase()?.includes(filters?.search?.toLowerCase()) ||
-                         section?.room?.toLowerCase()?.includes(filters?.search?.toLowerCase());
+      section?.className?.toLowerCase()?.includes(filters?.search?.toLowerCase()) ||
+      section?.room?.toLowerCase()?.includes(filters?.search?.toLowerCase());
     const matchesClass = filters?.classId === 'all' || section?.classId === filters?.classId;
     const matchesCapacity = filters?.capacity === 'all' ||
-                           (filters?.capacity === 'low' && section?.capacity < 30) ||
-                           (filters?.capacity === 'medium' && section?.capacity >= 30 && section?.capacity < 35) ||
-                           (filters?.capacity === 'high' && section?.capacity >= 35);
+      (filters?.capacity === 'low' && section?.capacity < 30) ||
+      (filters?.capacity === 'medium' && section?.capacity >= 30 && section?.capacity < 35) ||
+      (filters?.capacity === 'high' && section?.capacity >= 35);
 
     return matchesSearch && matchesClass && matchesCapacity;
   });
@@ -191,15 +191,15 @@ const SectionsManagement = () => {
     <div className="portal-layout">
       <AdminSidebar isCollapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
       <div className="main-content">
-        <AuthHeader onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)} onLogout={() => {}} />
+        <AuthHeader onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)} onLogout={() => { }} />
         <div className="portal-content">
           <Breadcrumb items={breadcrumbItems} />
 
           {/* Page Header */}
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Sections Management</h1>
-              <p className="text-gray-600">Manage student groupings within academic classes</p>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Sections Management</h1>
+              <p className="text-muted-foreground">Manage student groupings within academic classes</p>
             </div>
             <Button onClick={handleAddSection} className="flex items-center gap-2">
               <Icon name="Plus" size={20} />
@@ -208,59 +208,59 @@ const SectionsManagement = () => {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
-              <Icon name="AlertCircle" size={20} className="text-red-600" />
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="mb-6 p-4 bg-error/10 border border-error/20 rounded-xl flex items-center gap-3">
+              <Icon name="AlertCircle" size={20} className="text-error" />
+              <p className="text-sm text-error">{error}</p>
               <Button variant="ghost" size="sm" onClick={fetchData}>Retry</Button>
             </div>
           )}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Total Sections</p>
-                  <p className="text-2xl font-bold text-gray-900">{totalSections}</p>
+                  <p className="text-sm text-muted-foreground mb-1">Total Sections</p>
+                  <p className="text-2xl font-bold text-foreground">{totalSections}</p>
                 </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Icon name="Layers" size={24} className="text-blue-600" />
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <Icon name="Layers" size={24} className="text-primary" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Total Enrolled</p>
-                  <p className="text-2xl font-bold text-gray-900">{totalEnrolled}</p>
+                  <p className="text-sm text-muted-foreground mb-1">Total Enrolled</p>
+                  <p className="text-2xl font-bold text-foreground">{totalEnrolled}</p>
                 </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Icon name="Users" size={24} className="text-green-600" />
+                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+                  <Icon name="Users" size={24} className="text-green-600 dark:text-green-400" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Total Capacity</p>
-                  <p className="text-2xl font-bold text-gray-900">{totalCapacity}</p>
+                  <p className="text-sm text-muted-foreground mb-1">Total Capacity</p>
+                  <p className="text-2xl font-bold text-foreground">{totalCapacity}</p>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Icon name="Grid3x3" size={24} className="text-purple-600" />
+                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
+                  <Icon name="Grid3x3" size={24} className="text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Avg Enrollment</p>
-                  <p className="text-2xl font-bold text-gray-900">{avgEnrollment}%</p>
+                  <p className="text-sm text-muted-foreground mb-1">Avg Enrollment</p>
+                  <p className="text-2xl font-bold text-foreground">{avgEnrollment}%</p>
                 </div>
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <Icon name="TrendingUp" size={24} className="text-orange-600" />
+                <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
+                  <Icon name="TrendingUp" size={24} className="text-orange-600 dark:text-orange-400" />
                 </div>
               </div>
             </div>
@@ -275,24 +275,24 @@ const SectionsManagement = () => {
           />
 
           {/* Sections Table */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-card border border-border rounded-lg shadow overflow-hidden">
             {loading ? (
               <LoadingSkeleton />
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+                  <thead className="bg-muted/50 border-b border-border">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Section Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parent Class</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enrolled</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned Teachers</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Section Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Parent Class</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Room</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Capacity</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Enrolled</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Assigned Teachers</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-card divide-y divide-border">
                     {filteredSections?.length > 0 ? (
                       filteredSections?.map((section) => (
                         <SectionTableRow
@@ -305,9 +305,9 @@ const SectionsManagement = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
-                          <Icon name="Inbox" size={48} className="mx-auto mb-4 text-gray-400" />
-                          <p className="text-lg font-medium">No sections found</p>
+                        <td colSpan="7" className="px-6 py-12 text-center text-muted-foreground">
+                          <Icon name="Inbox" size={48} className="mx-auto mb-4 text-muted-foreground" />
+                          <p className="text-lg font-medium text-foreground">No sections found</p>
                           <p className="text-sm">Try adjusting your filters or add a new section</p>
                         </td>
                       </tr>

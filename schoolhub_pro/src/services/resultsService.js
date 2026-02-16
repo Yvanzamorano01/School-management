@@ -1,22 +1,40 @@
 import api from './api';
 
 const resultsService = {
-  async getStudentResults(semesterId = null) {
+  async getStudentResults(semesterId = null, academicYearId = null) {
     try {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const studentId = user.profileId;
-      if (!studentId) return [];
-      const response = await api.get(`/students/${studentId}/results`);
-      const results = Array.isArray(response.data) ? response.data : [];
+      if (!studentId) return { results: [], rank: null, totalStudents: null };
+
+      const params = {};
+      if (academicYearId) params.academicYearId = academicYearId;
+
+      const response = await api.get(`/students/${studentId}/results`, { params });
+      const data = response.data || {};
+
+      // Handle new response format: { results: [...], rank, totalStudents }
+      let results = [];
+      let rank = null;
+      let totalStudents = null;
+
+      if (data.results && Array.isArray(data.results)) {
+        results = data.results;
+        rank = data.rank;
+        totalStudents = data.totalStudents;
+      } else if (Array.isArray(data)) {
+        results = data;
+      }
+
       if (semesterId && semesterId !== 'all') {
-        return results.filter(r => {
+        results = results.filter(r => {
           const examSemId = r.examId?.semesterId?._id || r.examId?.semesterId;
           return examSemId === semesterId || String(examSemId) === String(semesterId);
         });
       }
-      return results;
+      return { results, rank, totalStudents };
     } catch {
-      return [];
+      return { results: [], rank: null, totalStudents: null };
     }
   },
 
@@ -40,8 +58,9 @@ const resultsService = {
 
   async getPerformanceStats(semesterId = null) {
     try {
-      const results = await this.getStudentResults(semesterId);
-      if (!Array.isArray(results) || results.length === 0) return {};
+      const data = await this.getStudentResults(semesterId);
+      const results = data.results || [];
+      if (results.length === 0) return {};
       const avg = Math.round(results.reduce((sum, r) => sum + (r.percentage || 0), 0) / results.length);
       const passed = results.filter(r => r.isPassed).length;
       return {
@@ -59,8 +78,8 @@ const resultsService = {
 
   async getPerformanceAnalytics(semesterId = null) {
     try {
-      const results = await this.getStudentResults(semesterId);
-      return { results: Array.isArray(results) ? results : [] };
+      const data = await this.getStudentResults(semesterId);
+      return { results: data.results || [] };
     } catch {
       return {};
     }

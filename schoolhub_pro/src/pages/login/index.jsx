@@ -8,7 +8,10 @@ import Button from '../../components/ui/Button';
 import { Checkbox } from '../../components/ui/Checkbox';
 import authService from '../../services/authService';
 
+import { useSchoolSettings } from '../../contexts/SchoolSettingsContext';
+
 const Login = () => {
+  const { schoolName, schoolLogo } = useSchoolSettings();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
@@ -115,10 +118,14 @@ const Login = () => {
         <div className="bg-card rounded-2xl shadow-elevation-3 p-6 md:p-8 lg:p-10">
           <div className="flex flex-col items-center mb-6 md:mb-8">
             <div className="w-16 h-16 md:w-20 md:h-20 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
-              <Icon name="GraduationCap" size={40} color="var(--color-primary)" />
+              {schoolLogo ? (
+                <img src={schoolLogo} alt="School logo" className="w-12 h-12 md:w-16 md:h-16 object-contain" />
+              ) : (
+                <Icon name="GraduationCap" size={40} color="var(--color-primary)" />
+              )}
             </div>
             <h1 className="text-2xl md:text-3xl font-semibold text-foreground text-center">
-              SchoolHub Pro
+              {schoolName}
             </h1>
             <p className="text-sm md:text-base text-muted-foreground text-center mt-2">
               Sign in to access your portal
@@ -235,7 +242,7 @@ const Login = () => {
         </div>
 
         <p className="text-center text-xs md:text-sm text-muted-foreground mt-6">
-          &copy; {new Date()?.getFullYear()} SchoolHub Pro. All rights reserved.
+          &copy; {new Date()?.getFullYear()} {schoolName}. All rights reserved.
         </p>
         <p className="text-center text-[10px] text-muted-foreground/50 mt-1">
           Developed by Yvan Zamorano

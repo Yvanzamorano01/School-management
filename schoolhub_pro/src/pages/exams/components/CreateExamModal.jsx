@@ -4,11 +4,12 @@ import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import Button from '../../../components/ui/Button';
 
-const CreateExamModal = ({ isOpen, onClose, onCreate, classes, subjects }) => {
+const CreateExamModal = ({ isOpen, onClose, onCreate, classes, subjects, semesters }) => {
   const [formData, setFormData] = useState({
     title: '',
     subjectId: '',
     classId: '',
+    semesterId: '',
     date: '',
     duration: '',
     totalMarks: '',
@@ -20,6 +21,7 @@ const CreateExamModal = ({ isOpen, onClose, onCreate, classes, subjects }) => {
       title: formData.title,
       subjectId: formData.subjectId,
       classId: formData.classId,
+      semesterId: formData.semesterId,
       date: formData.date,
       duration: formData.duration ? parseInt(formData.duration) : 60,
       totalMarks: parseInt(formData.totalMarks),
@@ -29,6 +31,7 @@ const CreateExamModal = ({ isOpen, onClose, onCreate, classes, subjects }) => {
       title: '',
       subjectId: '',
       classId: '',
+      semesterId: '',
       date: '',
       duration: '',
       totalMarks: '',
@@ -49,7 +52,7 @@ const CreateExamModal = ({ isOpen, onClose, onCreate, classes, subjects }) => {
           <Button
             variant="default"
             onClick={handleSubmit}
-            disabled={!formData.title || !formData.subjectId || !formData.classId || !formData.date || !formData.totalMarks}
+            disabled={!formData.title || !formData.subjectId || !formData.classId || !formData.semesterId || !formData.date || !formData.totalMarks}
           >
             Create Exam
           </Button>
@@ -82,6 +85,14 @@ const CreateExamModal = ({ isOpen, onClose, onCreate, classes, subjects }) => {
             required
           />
         </div>
+
+        <Select
+          label="Semester"
+          options={semesters}
+          value={formData.semesterId}
+          onChange={(value) => setFormData(prev => ({ ...prev, semesterId: value }))}
+          required
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input

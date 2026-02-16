@@ -84,7 +84,7 @@ const AcademicYears = () => {
 
   const handleSetActive = async (year) => {
     try {
-      await academicYearService.update(year.id, { ...year, status: 'Active' });
+      await academicYearService.activate(year.id);
       fetchAcademicYears();
     } catch (err) {
       console.error('Error setting active:', err);
@@ -161,7 +161,7 @@ const AcademicYears = () => {
   return (
     <div className="min-h-screen bg-background">
       <AdminSidebar isCollapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
-      <AuthHeader onLogout={() => { localStorage.clear(); window.location.href = '/'; }} />
+      <AuthHeader onLogout={() => { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; }} />
       <main className="main-content">
         <div className="main-content-inner">
           <Breadcrumb items={breadcrumbItems} />
@@ -233,7 +233,7 @@ const AcademicYears = () => {
                       <span className="text-muted-foreground">{year?.semestersCount} Semesters</span>
                     </div>
                   </div>
-                  {year?.status !== 'Active' && year?.status !== 'Completed' && (
+                  {year?.status !== 'Active' && (
                     <Button variant="outline" className="w-full mt-4" onClick={() => handleSetActive(year)}>
                       <Icon name="Play" size={16} className="mr-2" />Set as Active
                     </Button>

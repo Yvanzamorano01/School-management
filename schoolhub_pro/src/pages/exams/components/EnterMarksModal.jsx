@@ -45,6 +45,7 @@ const EnterMarksModal = ({ isOpen, onClose, exam, onSaved }) => {
           name: s.name,
           rollNumber: s.rollNumber || s.studentId || '',
           marks: existing ? String(existing.marksObtained) : '',
+          remarks: existing?.remarks || '',
           status: existing ? 'present' : 'present',
           hasExistingResult: !!existing
         };
@@ -61,6 +62,10 @@ const EnterMarksModal = ({ isOpen, onClose, exam, onSaved }) => {
 
   const handleMarksChange = (studentId, marks) => {
     setStudents(prev => prev.map(s => s.id === studentId ? { ...s, marks } : s));
+  };
+
+  const handleRemarksChange = (studentId, remarks) => {
+    setStudents(prev => prev.map(s => s.id === studentId ? { ...s, remarks } : s));
   };
 
   const handleStatusToggle = (studentId) => {
@@ -81,7 +86,8 @@ const EnterMarksModal = ({ isOpen, onClose, exam, onSaved }) => {
         .filter(s => s.status === 'present' && s.marks !== '')
         .map(s => ({
           studentId: s.id,
-          marksObtained: parseInt(s.marks)
+          marksObtained: parseInt(s.marks),
+          ...(s.remarks ? { remarks: s.remarks } : {})
         }));
 
       if (marks.length === 0) {
@@ -203,6 +209,16 @@ const EnterMarksModal = ({ isOpen, onClose, exam, onSaved }) => {
                           disabled={student.status === 'absent'}
                           min="0"
                           max={exam.totalMarks}
+                        />
+                      </div>
+
+                      <div className="w-32">
+                        <Input
+                          type="text"
+                          placeholder="Remarks"
+                          value={student.remarks}
+                          onChange={(e) => handleRemarksChange(student.id, e.target.value)}
+                          disabled={student.status === 'absent'}
                         />
                       </div>
 

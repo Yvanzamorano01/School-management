@@ -294,6 +294,32 @@ router.get('/:id/results', auth, controller.getResults);
 
 /**
  * @swagger
+ * /students/{id}/history:
+ *   get:
+ *     summary: Get student academic history
+ *     description: Retrieve full academic history for a specific student
+ *     tags: [Students]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Student ID
+ *     responses:
+ *       200:
+ *         description: Student history retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Student not found
+ */
+router.get('/:id/history', auth, controller.getHistory);
+
+/**
+ * @swagger
  * /students/{id}/attendance:
  *   get:
  *     summary: Get student attendance
@@ -383,5 +409,39 @@ router.get('/:id/attendance', auth, controller.getAttendance);
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/:id/fees', auth, controller.getFees);
+
+/**
+ * @swagger
+ * /students/promote:
+ *   post:
+ *     summary: Promote students
+ *     description: Bulk promote students to a new class/section
+ *     tags: [Students]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               studentIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               classId:
+ *                 type: string
+ *               sectionId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Students promoted successfully
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
+ */
+router.post('/promote', auth, isAdmin, hasPermission('Students'), controller.promoteStudents);
 
 module.exports = router;

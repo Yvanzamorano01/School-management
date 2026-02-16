@@ -1,5 +1,6 @@
 const Semester = require('../models/Semester');
 const Exam = require('../models/Exam');
+const ExamResult = require('../models/ExamResult');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -48,6 +49,15 @@ exports.delete = async (req, res, next) => {
   try {
     const semester = await Semester.findByIdAndDelete(req.params.id);
     if (!semester) return res.status(404).json({ success: false, message: 'Semester not found' });
+
+    // Cascade: delete exams and their results for this semester
+    const exams = await Exam.find({ semesterId: req.params.id });
+    const examIds = exams.map(e => e._id);
+    if (examIds.length > 0) {
+      await ExamResult.deleteMany({ examId: { $in: examIds } });
+      await Exam.deleteMany({ semesterId: req.params.id });
+    }
+
     res.json({ success: true, message: 'Semester deleted' });
   } catch (err) { next(err); }
 };

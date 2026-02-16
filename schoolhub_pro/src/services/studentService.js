@@ -33,9 +33,10 @@ const studentService = {
 
   async getStudentResults(id) {
     const response = await api.get(`/students/${id}/results`);
-    // Handle both wrapped {data: [...]} and direct array responses
     const data = response.data;
-    return Array.isArray(data) ? data : (data?.data || data || []);
+    // Backend returns { results: [...], rank, totalStudents } after interceptor unwrap
+    if (data?.results && Array.isArray(data.results)) return data.results;
+    return Array.isArray(data) ? data : (data?.data || []);
   },
 
   async getStudentAttendance(id) {
@@ -45,9 +46,10 @@ const studentService = {
 
   async getStudentFees(id) {
     const response = await api.get(`/students/${id}/fees`);
-    // Backend returns { fees: [...], summary: {...} }, extract fees array
     const data = response.data;
-    return Array.isArray(data) ? data : (data?.fees || data?.data || []);
+    // Backend returns { fees: [...], summary: {...} } — return full object for ViewStudentModal
+    if (data?.fees && data?.summary) return data;
+    return Array.isArray(data) ? { fees: data, summary: null } : (data || { fees: [], summary: null });
   },
 
   async getStudentAcademics(id) {
@@ -70,6 +72,18 @@ const studentService = {
       responseType: 'blob'
     });
     return response.data;
+  },
+
+  async promoteStudents(studentIds, classId, sectionId, remarks) {
+    const response = await api.post('/students/promote', { studentIds, classId, sectionId, remarks });
+    return response.data;
+  },
+
+  async getStudentHistory(id) {
+    const response = await api.get(`/students/${id}/history`);
+    // Interceptor already unwraps response.data → data. Don't double-unwrap.
+    const data = response.data;
+    return Array.isArray(data) ? data : (data?.data || data || []);
   }
 };
 

@@ -3,8 +3,8 @@ import Icon from '../../../components/AppIcon';
 
 
 const SectionTableRow = ({ section, onView, onEdit, onDelete }) => {
-  const enrollmentPercentage = section?.capacity > 0 
-    ? Math.round((section?.enrolled / section?.capacity) * 100) 
+  const enrollmentPercentage = section?.capacity > 0
+    ? Math.round((section?.enrolled / section?.capacity) * 100)
     : 0;
 
   const getEnrollmentColor = (percentage) => {
@@ -15,44 +15,44 @@ const SectionTableRow = ({ section, onView, onEdit, onDelete }) => {
   };
 
   return (
-    <tr className="hover:bg-gray-50 transition-colors">
+    <tr className="hover:bg-muted/50 transition-colors">
       {/* Section Name */}
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-            <Icon name="Layers" size={20} className="text-blue-600" />
+          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mr-3">
+            <Icon name="Layers" size={20} className="text-primary" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">{section?.name}</p>
-            <p className="text-xs text-gray-500">Room {section?.room}</p>
+            <p className="text-sm font-medium text-foreground">{section?.name}</p>
+            <p className="text-xs text-muted-foreground">Room {section?.room}</p>
           </div>
         </div>
       </td>
 
       {/* Parent Class */}
       <td className="px-6 py-4 whitespace-nowrap">
-        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
           {section?.className}
         </span>
       </td>
 
       {/* Room */}
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="flex items-center text-sm text-gray-900">
-          <Icon name="DoorOpen" size={16} className="mr-2 text-gray-400" />
+        <div className="flex items-center text-sm text-foreground">
+          <Icon name="DoorOpen" size={16} className="mr-2 text-muted-foreground" />
           {section?.room}
         </div>
       </td>
 
       {/* Capacity */}
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-gray-900">{section?.capacity}</div>
+        <div className="text-sm text-foreground">{section?.capacity}</div>
       </td>
 
       {/* Enrolled */}
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center">
-          <span className="text-sm font-medium text-gray-900 mr-2">{section?.enrolled}</span>
+          <span className="text-sm font-medium text-foreground mr-2">{section?.enrolled}</span>
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getEnrollmentColor(enrollmentPercentage)}`}>
             {enrollmentPercentage}%
           </span>
@@ -64,18 +64,18 @@ const SectionTableRow = ({ section, onView, onEdit, onDelete }) => {
         <div className="flex flex-col gap-1">
           {section?.teachers?.length > 0 ? (
             section?.teachers?.slice(0, 2)?.map((teacher, idx) => (
-              <div key={teacher?.id || idx} className="flex items-center text-xs text-gray-600">
-                <Icon name="User" size={12} className="mr-1 text-gray-400" />
+              <div key={teacher?.id || idx} className="flex items-center text-xs text-muted-foreground">
+                <Icon name="User" size={12} className="mr-1 text-muted-foreground" />
                 <span className="truncate max-w-[150px]">
                   {teacher?.name}{teacher?.subject ? ` (${teacher.subject})` : ''}
                 </span>
               </div>
             ))
           ) : (
-            <span className="text-xs text-gray-400 italic">No teachers assigned</span>
+            <span className="text-xs text-muted-foreground italic">No teachers assigned</span>
           )}
           {section?.teachers?.length > 2 && (
-            <span className="text-xs text-blue-600">+{section?.teachers?.length - 2} more</span>
+            <span className="text-xs text-blue-600 dark:text-blue-400">+{section?.teachers?.length - 2} more</span>
           )}
         </div>
       </td>

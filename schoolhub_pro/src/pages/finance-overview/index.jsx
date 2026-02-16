@@ -14,6 +14,8 @@ import PaymentMethodChart from './components/PaymentMethodChart';
 import RecentTransactionItem from './components/RecentTransactionItem';
 import QuickActionButton from './components/QuickActionButton';
 import dashboardService from '../../services/dashboardService';
+import { useSchoolSettings } from '../../contexts/SchoolSettingsContext';
+import { formatCurrency } from '../../utils/format';
 
 const FinanceOverview = () => {
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -21,8 +23,9 @@ const FinanceOverview = () => {
   const SidebarComponent = userRole === 'student' ? StudentSidebar : userRole === 'admin' ? AdminSidebar : BursarSidebar;
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState('current-month');
+  const [selectedPeriod, setSelectedPeriod] = useState('all-time');
   const [selectedFeeFilter, setSelectedFeeFilter] = useState('all');
+  const { currency } = useSchoolSettings();
 
   // API Data States
   const [revenueCards, setRevenueCards] = useState([]);
@@ -47,25 +50,48 @@ const FinanceOverview = () => {
 
 
   const periodOptions = [
-  { value: 'current-month', label: 'Current Month' },
-  { value: 'last-month', label: 'Last Month' },
-  { value: 'current-quarter', label: 'Current Quarter' },
-  { value: 'current-year', label: 'Current Year' },
-  { value: 'custom', label: 'Custom Range' }];
+    { value: 'all-time', label: 'All Time' },
+    { value: 'current-month', label: 'Current Month' },
+    { value: 'last-month', label: 'Last Month' },
+    { value: 'current-quarter', label: 'Current Quarter' },
+    { value: 'current-year', label: 'Current Year' }];
 
 
   const feeFilterOptions = [
-  { value: 'all', label: 'All Fee Types' },
-  { value: 'tuition', label: 'Tuition Fees' },
-  { value: 'exam', label: 'Exam Fees' },
-  { value: 'transport', label: 'Transport Fees' },
-  { value: 'library', label: 'Library Fees' }];
+    { value: 'all', label: 'All Fee Types' },
+    ...feeTypeData.map(ft => ({
+      value: ft.title.toLowerCase().split(' ')[0],
+      label: ft.title
+    }))
+  ];
 
 
-  // Fetch finance data on mount
+  // Convert period to date range
+  const getPeriodDateRange = (period) => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
+    switch (period) {
+      case 'current-month':
+        return { from: new Date(year, month, 1), to: new Date(year, month + 1, 0, 23, 59, 59) };
+      case 'last-month':
+        return { from: new Date(year, month - 1, 1), to: new Date(year, month, 0, 23, 59, 59) };
+      case 'current-quarter': {
+        const qStart = Math.floor(month / 3) * 3;
+        return { from: new Date(year, qStart, 1), to: new Date(year, qStart + 3, 0, 23, 59, 59) };
+      }
+      case 'current-year':
+        return { from: new Date(year, 0, 1), to: new Date(year, 11, 31, 23, 59, 59) };
+      default:
+        return null;
+    }
+  };
+
+  // Fetch finance data on mount and when period changes
   useEffect(() => {
     fetchFinanceData();
-  }, []);
+  }, [currency, selectedPeriod]);
 
   const fetchFinanceData = async () => {
     fetchStats();
@@ -76,12 +102,13 @@ const FinanceOverview = () => {
     try {
       setLoadingStats(true);
       setError(null);
-      const data = await dashboardService.getStats();
+      const dateRange = getPeriodDateRange(selectedPeriod);
+      const data = await dashboardService.getStats(dateRange ? { dateRange } : {});
 
       setRevenueCards([
         {
           title: "Total Collections",
-          amount: `${data.totalRevenue?.toLocaleString() || "0"} FCFA`,
+          amount: formatCurrency(data.totalRevenue, currency),
           change: data.revenueChange || "+0%",
           changeType: data.revenueChange?.startsWith('+') ? "positive" : "negative",
           trend: "vs last month",
@@ -90,7 +117,7 @@ const FinanceOverview = () => {
         },
         {
           title: "Pending Fees",
-          amount: `${data.pendingFees?.toLocaleString() || "0"} FCFA`,
+          amount: formatCurrency(data.pendingFees, currency),
           change: data.pendingFeesChange || "+0%",
           changeType: data.pendingFeesChange?.startsWith('-') ? "positive" : "negative",
           trend: "vs last month",
@@ -306,8 +333,8 @@ const FinanceOverview = () => {
               </>
             ) : (
               <>
-                <RevenueChart data={monthlyRevenueData} />
-                <PaymentMethodChart data={paymentMethodData} />
+                <RevenueChart data={monthlyRevenueData} currency={currency} />
+                <PaymentMethodChart data={paymentMethodData} currency={currency} />
               </>
             )}
           </div>
@@ -337,9 +364,11 @@ const FinanceOverview = () => {
                   ))}
                 </>
               ) : (
-                feeTypeData?.map((feeType, index) =>
-                  <FeeTypeCard key={index} {...feeType} />
-                )
+                feeTypeData
+                  ?.filter(ft => selectedFeeFilter === 'all' || ft.title.toLowerCase().startsWith(selectedFeeFilter))
+                  ?.map((feeType, index) =>
+                    <FeeTypeCard key={index} {...feeType} currency={currency} />
+                  )
               )}
             </div>
           </div>
@@ -383,7 +412,8 @@ const FinanceOverview = () => {
                     recentTransactions?.map((transaction) =>
                       <RecentTransactionItem
                         key={transaction?.id}
-                        transaction={transaction} />
+                        transaction={transaction}
+                        currency={currency} />
                     )
                   )}
                 </div>
@@ -431,7 +461,7 @@ const FinanceOverview = () => {
                       42 Students with Overdue Fees
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Total overdue amount: 18,500 FCFA
+                      Total overdue amount: {formatCurrency(18500, currency)}
                     </p>
                   </div>
                   <div className="p-3 bg-success/10 border border-success/20 rounded-lg">

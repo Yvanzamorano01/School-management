@@ -29,6 +29,11 @@ const academicYearService = {
   async getActive() {
     const response = await api.get('/academic-years/active');
     return response.data;
+  },
+
+  async activate(id) {
+    const response = await api.post(`/academic-years/${id}/activate`);
+    return response.data;
   }
 };
 

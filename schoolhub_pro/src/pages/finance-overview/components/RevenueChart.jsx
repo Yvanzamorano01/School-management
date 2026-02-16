@@ -1,7 +1,8 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { formatCurrency } from '../../../utils/format';
 
-const RevenueChart = ({ data }) => {
+const RevenueChart = ({ data, currency }) => {
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload?.length) {
       return (
@@ -12,14 +13,14 @@ const RevenueChart = ({ data }) => {
               <div className="w-3 h-3 rounded-sm bg-primary" />
               <span className="text-xs text-muted-foreground">Collected:</span>
               <span className="text-xs font-semibold text-foreground">
-                {payload?.[0]?.value?.toLocaleString()} FCFA
+                {formatCurrency(payload?.[0]?.value, currency)}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm bg-warning" />
               <span className="text-xs text-muted-foreground">Pending:</span>
               <span className="text-xs font-semibold text-foreground">
-                {payload?.[1]?.value?.toLocaleString()} FCFA
+                {formatCurrency(payload?.[1]?.value, currency)}
               </span>
             </div>
           </div>
@@ -36,30 +37,30 @@ const RevenueChart = ({ data }) => {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-            <XAxis 
-              dataKey="month" 
+            <XAxis
+              dataKey="month"
               stroke="var(--color-muted-foreground)"
               style={{ fontSize: '12px' }}
             />
-            <YAxis 
+            <YAxis
               stroke="var(--color-muted-foreground)"
               style={{ fontSize: '12px' }}
               tickFormatter={(value) => value >= 1000000 ? `${value / 1000000}M` : value >= 1000 ? `${value / 1000}k` : value}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Legend 
+            <Legend
               wrapperStyle={{ fontSize: '12px' }}
               iconType="square"
             />
-            <Bar 
-              dataKey="collected" 
-              fill="var(--color-primary)" 
+            <Bar
+              dataKey="collected"
+              fill="var(--color-primary)"
               radius={[8, 8, 0, 0]}
               name="Collected"
             />
-            <Bar 
-              dataKey="pending" 
-              fill="var(--color-warning)" 
+            <Bar
+              dataKey="pending"
+              fill="var(--color-warning)"
               radius={[8, 8, 0, 0]}
               name="Pending"
             />

@@ -21,7 +21,7 @@ const SectionFilters = ({ filters, classes, onFilterChange, onReset }) => {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-6">
+    <div className="bg-card border border-border rounded-lg p-6 mb-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Search */}
         <div className="md:col-span-2">

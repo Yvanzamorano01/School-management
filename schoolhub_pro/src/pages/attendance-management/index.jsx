@@ -9,6 +9,7 @@ import ClassSelector from './components/ClassSelector';
 import AttendanceStats from './components/AttendanceStats';
 import StudentRoster from './components/StudentRoster';
 import AttendanceHistory from './components/AttendanceHistory';
+import AcademicYearFilter from '../../components/common/AcademicYearFilter';
 import Button from '../../components/ui/Button';
 import Icon from '../../components/AppIcon';
 import attendanceService from '../../services/attendanceService';
@@ -20,6 +21,7 @@ const AttendanceManagement = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date()?.toISOString()?.split('T')?.[0]);
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState('');
   const [attendance, setAttendance] = useState({});
   const [isSaved, setIsSaved] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -38,8 +40,6 @@ const AttendanceManagement = () => {
   const userRole = getUserRole();
   const isAdmin = userRole === 'admin';
 
-
-
   const dashboardPath = isAdmin ? '/admin-dashboard' : userRole === 'student' ? '/student-dashboard' : '/teacher-dashboard';
   const dashboardLabel = isAdmin ? 'Admin Dashboard' : userRole === 'student' ? 'Student Dashboard' : 'Teacher Dashboard';
   const breadcrumbItems = [
@@ -47,10 +47,9 @@ const AttendanceManagement = () => {
     { label: 'Attendance', path: '/attendance-management' }
   ];
 
-
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [selectedAcademicYear]);
 
   useEffect(() => {
     if (selectedClass) {
@@ -109,8 +108,10 @@ const AttendanceManagement = () => {
       }));
       setClasses(formattedClasses);
 
-      // Fetch attendance history
-      const attendanceData = await attendanceService.getAll();
+      // Fetch attendance history with year filter
+      const params = {};
+      if (selectedAcademicYear) params.academicYearId = selectedAcademicYear;
+      const attendanceData = await attendanceService.getAll(params);
 
       if (Array.isArray(attendanceData)) {
         const formattedHistory = attendanceData.map(record => ({
@@ -150,14 +151,58 @@ const AttendanceManagement = () => {
     setIsSaved(false);
   };
 
-  const handleSaveAttendance = () => {
-    console.log('Saving attendance:', { class: selectedClass, date: selectedDate, attendance });
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+  const handleSaveAttendance = async () => {
+    if (!selectedClass || !selectedDate || Object.keys(attendance).length === 0) return;
+
+    try {
+      // Build records array: [{ studentId, status }]
+      const records = Object.entries(attendance).map(([studentId, status]) => ({
+        studentId,
+        status
+      }));
+
+      // Try to find existing attendance for this class/date to update, otherwise create
+      await attendanceService.create({
+        classId: selectedClass,
+        date: selectedDate,
+        records
+      });
+
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
+      // Refresh history
+      fetchData();
+    } catch (err) {
+      console.error('Error saving attendance:', err);
+      const msg = err?.response?.data?.message || 'Failed to save attendance';
+      alert(msg);
+    }
   };
 
   const handleExportReport = () => {
-    console.log('Exporting attendance report');
+    if (attendanceHistory.length === 0) {
+      alert('No attendance data to export');
+      return;
+    }
+
+    // Build CSV content
+    const headers = ['Date', 'Status', 'Present', 'Absent', 'Late'];
+    const rows = attendanceHistory.map(record => [
+      record.date,
+      record.status,
+      record.presentCount,
+      record.absentCount,
+      record.lateCount
+    ]);
+
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `attendance-report-${selectedDate || 'all'}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const calculateStats = () => {
@@ -222,6 +267,14 @@ const AttendanceManagement = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+              <div className="w-48">
+                <AcademicYearFilter
+                  selectedYear={selectedAcademicYear}
+                  onChange={setSelectedAcademicYear}
+                  label=""
+                  className="mb-0"
+                />
+              </div>
               <Button
                 variant={showHistory ? 'default' : 'outline'}
                 iconName="Calendar"

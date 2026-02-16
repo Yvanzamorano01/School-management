@@ -416,3 +416,161 @@ exports.getPublicSections = async (req, res, next) => {
     next(err);
   }
 };
+
+// @desc    Get user statistics for User Management dashboard
+// @route   GET /api/auth/user-stats
+// @access  Private/Admin
+exports.getUserStats = async (req, res, next) => {
+  try {
+    // Get counts by role + active/inactive
+    const roleCounts = await User.aggregate([
+      {
+        $group: {
+          _id: { role: '$role', isActive: '$isActive' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Build structured stats
+    const stats = {
+      total: 0,
+      active: 0,
+      inactive: 0,
+      byRole: {}
+    };
+
+    roleCounts.forEach(item => {
+      const role = item._id.role;
+      const isActive = item._id.isActive;
+      const count = item.count;
+
+      if (!stats.byRole[role]) {
+        stats.byRole[role] = { total: 0, active: 0, inactive: 0 };
+      }
+
+      stats.byRole[role].total += count;
+      stats.total += count;
+
+      if (isActive !== false) {
+        stats.byRole[role].active += count;
+        stats.active += count;
+      } else {
+        stats.byRole[role].inactive += count;
+        stats.inactive += count;
+      }
+    });
+
+    // Get recent registrations (last 10 users created)
+    const recentRegistrations = await User.find()
+      .select('email role createdAt isActive')
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    // Populate profile names for recent registrations
+    for (const user of recentRegistrations) {
+      let profileName = null;
+      if (user.role === 'admin' || user.role === 'super_admin' || user.role === 'moderator') {
+        const admin = await Admin.findOne({ userId: user._id }).select('name').lean();
+        profileName = admin?.name;
+      } else if (user.role === 'teacher') {
+        const teacher = await Teacher.findOne({ userId: user._id }).select('name').lean();
+        profileName = teacher?.name;
+      } else if (user.role === 'student') {
+        const student = await Student.findOne({ userId: user._id }).select('name').lean();
+        profileName = student?.name;
+      } else if (user.role === 'parent') {
+        const parent = await Parent.findOne({ userId: user._id }).select('name').lean();
+        profileName = parent?.name;
+      }
+      user.profileName = profileName || user.email.split('@')[0];
+    }
+
+    // Get recent logins (last 10 users who logged in)
+    const recentLogins = await User.find({ lastLogin: { $ne: null } })
+      .select('email role lastLogin')
+      .sort({ lastLogin: -1 })
+      .limit(10)
+      .lean();
+
+    for (const user of recentLogins) {
+      let profileName = null;
+      if (user.role === 'admin' || user.role === 'super_admin' || user.role === 'moderator') {
+        const admin = await Admin.findOne({ userId: user._id }).select('name').lean();
+        profileName = admin?.name;
+      } else if (user.role === 'teacher') {
+        const teacher = await Teacher.findOne({ userId: user._id }).select('name').lean();
+        profileName = teacher?.name;
+      } else if (user.role === 'student') {
+        const student = await Student.findOne({ userId: user._id }).select('name').lean();
+        profileName = student?.name;
+      } else if (user.role === 'parent') {
+        const parent = await Parent.findOne({ userId: user._id }).select('name').lean();
+        profileName = parent?.name;
+      }
+      user.profileName = profileName || user.email.split('@')[0];
+    }
+
+    res.json({
+      success: true,
+      data: {
+        stats,
+        recentRegistrations,
+        recentLogins
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Toggle user active status
+// @route   PATCH /api/auth/users/:id/toggle-active
+// @access  Private/Super Admin
+exports.toggleUserActive = async (req, res, next) => {
+  try {
+    // Only super_admin can toggle
+    if (req.user.role !== 'super_admin') {
+      return res.status(403).json({ success: false, message: 'Only Super Admin can activate/deactivate accounts' });
+    }
+
+    // Try to find user by ID first, then by profileId
+    let targetUser = await User.findById(req.params.id);
+    if (!targetUser) {
+      targetUser = await User.findOne({ profileId: req.params.id });
+    }
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'No user account found for this profile' });
+    }
+
+    // Cannot deactivate yourself
+    if (targetUser._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({ success: false, message: 'Cannot deactivate your own account' });
+    }
+
+    // Cannot deactivate another super_admin
+    if (targetUser.role === 'super_admin') {
+      return res.status(400).json({ success: false, message: 'Cannot deactivate a Super Admin account' });
+    }
+
+    targetUser.isActive = !targetUser.isActive;
+    await targetUser.save();
+
+    // Also update profile status if applicable
+    if (targetUser.profileId && targetUser.profileModel) {
+      const ProfileModel = require(`../models/${targetUser.profileModel}`);
+      await ProfileModel.findByIdAndUpdate(targetUser.profileId, {
+        status: targetUser.isActive ? 'Active' : 'Inactive'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Account ${targetUser.isActive ? 'activated' : 'deactivated'} successfully`,
+      data: { userId: targetUser._id, isActive: targetUser.isActive }
+    });
+  } catch (err) {
+    next(err);
+  }
+};

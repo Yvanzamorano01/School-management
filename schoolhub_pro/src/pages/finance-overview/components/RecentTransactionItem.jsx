@@ -1,8 +1,9 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 import { getInitials, getAvatarColor, hasValidPhoto, DEFAULT_AVATAR_SM } from '../../../utils/avatar';
+import { formatCurrency } from '../../../utils/format';
 
-const RecentTransactionItem = ({ transaction }) => {
+const RecentTransactionItem = ({ transaction, currency }) => {
   const getStatusColor = () => {
     if (transaction?.status === 'completed') return 'text-success';
     if (transaction?.status === 'pending') return 'text-warning';
@@ -49,7 +50,7 @@ const RecentTransactionItem = ({ transaction }) => {
             {transaction?.studentName}
           </h4>
           <span className="text-sm font-semibold text-foreground whitespace-nowrap">
-            {transaction?.amount?.toLocaleString()} FCFA
+            {formatCurrency(transaction?.amount, currency)}
           </span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

@@ -1,8 +1,9 @@
 import React from 'react';
 import Button from '../../../components/ui/Button';
+import Icon from '../../../components/AppIcon';
 import { getInitials, getAvatarColor, hasValidPhoto, DEFAULT_AVATAR_SM } from '../../../utils/avatar';
 
-const StudentTableRow = ({ student, onEdit, onView, onManageClass, onDelete }) => {
+const StudentTableRow = ({ student, onEdit, onView, onManageClass, onDelete, onToggleActive, toggleLoading }) => {
   const getStatusColor = (status) => {
     const colors = {
       'Active': 'bg-success/10 text-success',
@@ -57,6 +58,20 @@ const StudentTableRow = ({ student, onEdit, onView, onManageClass, onDelete }) =
           <Button variant="ghost" size="icon" onClick={() => onView(student)} iconName="Eye" />
           <Button variant="ghost" size="icon" onClick={() => onEdit(student)} iconName="Edit" />
           <Button variant="ghost" size="icon" onClick={() => onManageClass(student)} iconName="BookOpen" />
+          {onToggleActive && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onToggleActive(student)}
+              disabled={toggleLoading}
+              title={student?.status === 'Active' ? 'Deactivate account' : 'Activate account'}>
+              <Icon
+                name={student?.status === 'Active' ? 'UserX' : 'UserCheck'}
+                size={16}
+                className={student?.status === 'Active' ? 'text-warning' : 'text-success'}
+              />
+            </Button>
+          )}
           <Button variant="ghost" size="icon" onClick={() => onDelete(student)} iconName="Trash2" className="text-error hover:text-error" />
         </div>
       </td>

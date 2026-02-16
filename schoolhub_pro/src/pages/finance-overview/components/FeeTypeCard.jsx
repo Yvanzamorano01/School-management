@@ -1,7 +1,8 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
+import { formatCurrency } from '../../../utils/format';
 
-const FeeTypeCard = ({ title, collected, pending, total, collectionRate, icon }) => {
+const FeeTypeCard = ({ title, collected, pending, total, collectionRate, icon, currency }) => {
   const getStatusColor = () => {
     if (collectionRate >= 80) return 'var(--color-success)';
     if (collectionRate >= 50) return 'var(--color-warning)';
@@ -16,19 +17,19 @@ const FeeTypeCard = ({ title, collected, pending, total, collectionRate, icon })
         </div>
         <div className="flex-1">
           <h4 className="text-base font-semibold text-foreground">{title}</h4>
-          <p className="text-sm text-muted-foreground">Total: {total?.toLocaleString()} FCFA</p>
+          <p className="text-sm text-muted-foreground">Total: {formatCurrency(total, currency)}</p>
         </div>
       </div>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Collected</span>
-          <span className="text-sm font-semibold text-success">{collected?.toLocaleString()} FCFA</span>
+          <span className="text-sm font-semibold text-success">{formatCurrency(collected, currency)}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Pending</span>
-          <span className="text-sm font-semibold text-warning">{pending?.toLocaleString()} FCFA</span>
+          <span className="text-sm font-semibold text-warning">{formatCurrency(pending, currency)}</span>
         </div>
-        
+
         <div className="pt-2">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-muted-foreground">Collection Rate</span>
@@ -37,9 +38,9 @@ const FeeTypeCard = ({ title, collected, pending, total, collectionRate, icon })
             </span>
           </div>
           <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full rounded-full transition-all duration-500"
-              style={{ 
+              style={{
                 width: `${collectionRate}%`,
                 backgroundColor: getStatusColor()
               }}

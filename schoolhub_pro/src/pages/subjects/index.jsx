@@ -77,8 +77,8 @@ const Subjects = () => {
 
   const filteredSubjects = subjects?.filter(subject => {
     const matchesSearch = subject?.name?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
-                         subject?.code?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
-                         subject?.description?.toLowerCase()?.includes(searchQuery?.toLowerCase());
+      subject?.code?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
+      subject?.description?.toLowerCase()?.includes(searchQuery?.toLowerCase());
     const matchesClass = selectedClass === 'all' || subject?.classId === selectedClass;
     return matchesSearch && matchesClass;
   });
@@ -122,10 +122,7 @@ const Subjects = () => {
     setShowViewModal(true);
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = '/';
-  };
+
 
   const dashboardPath = userRole === 'admin' ? '/admin-dashboard' : '/teacher-dashboard';
   const breadcrumbItems = [
@@ -158,7 +155,7 @@ const Subjects = () => {
         isCollapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
-      <AuthHeader onLogout={handleLogout} />
+      <AuthHeader />
       <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <div className="main-content-inner">
           <Breadcrumb items={breadcrumbItems} />

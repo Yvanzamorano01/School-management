@@ -15,13 +15,16 @@ import FeeTypeBreakdown from './components/FeeTypeBreakdown';
 import ClassRevenueTable from './components/ClassRevenueTable';
 import dashboardService from '../../services/dashboardService';
 import classService from '../../services/classService';
+import { useSchoolSettings } from '../../contexts/SchoolSettingsContext';
+import { formatCurrency } from '../../utils/format';
 
 const FinanceDashboard = () => {
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState('current-month');
+  const [selectedPeriod, setSelectedPeriod] = useState('all-time');
   const [selectedClass, setSelectedClass] = useState('all');
 
+  const { currency } = useSchoolSettings();
   const userName = localStorage.getItem('userName') || 'Admin User';
   const userRole = localStorage.getItem('userRole') === 'admin' ? 'Administrator' : 'Admin';
 
@@ -45,26 +48,61 @@ const FinanceDashboard = () => {
   const [error, setError] = useState(null);
 
   const breadcrumbItems = [
-  { label: 'Finance', path: '/finance-dashboard' },
-  { label: 'Dashboard', path: '/finance-dashboard' }];
+    { label: 'Finance', path: '/finance-dashboard' },
+    { label: 'Dashboard', path: '/finance-dashboard' }];
 
 
   const periodOptions = [
-  { value: 'today', label: 'Today' },
-  { value: 'current-week', label: 'Current Week' },
-  { value: 'current-month', label: 'Current Month' },
-  { value: 'current-quarter', label: 'Current Quarter' },
-  { value: 'current-year', label: 'Current Year' },
-  { value: 'custom', label: 'Custom Range' }];
+    { value: 'all-time', label: 'All Time' },
+    { value: 'today', label: 'Today' },
+    { value: 'current-week', label: 'Current Week' },
+    { value: 'current-month', label: 'Current Month' },
+    { value: 'current-quarter', label: 'Current Quarter' },
+    { value: 'current-year', label: 'Current Year' }];
 
 
   const [classOptions, setClassOptions] = useState([{ value: 'all', label: 'All Classes' }]);
 
-  // Fetch dashboard data on mount
+  // Convert period to date range
+  const getPeriodDateRange = (period) => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const day = now.getDate();
+    const dayOfWeek = now.getDay();
+
+    switch (period) {
+      case 'today':
+        return { from: new Date(year, month, day, 0, 0, 0), to: new Date(year, month, day, 23, 59, 59) };
+      case 'current-week': {
+        const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        const monday = new Date(year, month, day - mondayOffset, 0, 0, 0);
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        sunday.setHours(23, 59, 59);
+        return { from: monday, to: sunday };
+      }
+      case 'current-month':
+        return { from: new Date(year, month, 1), to: new Date(year, month + 1, 0, 23, 59, 59) };
+      case 'last-month':
+        return { from: new Date(year, month - 1, 1), to: new Date(year, month, 0, 23, 59, 59) };
+      case 'current-quarter': {
+        const qStart = Math.floor(month / 3) * 3;
+        return { from: new Date(year, qStart, 1), to: new Date(year, qStart + 3, 0, 23, 59, 59) };
+      }
+      case 'current-year':
+        return { from: new Date(year, 0, 1), to: new Date(year, 11, 31, 23, 59, 59) };
+      case 'all-time':
+      default:
+        return null; // No filter
+    }
+  };
+
+  // Fetch dashboard data on mount and when period changes
   useEffect(() => {
     fetchFinanceData();
     fetchClasses();
-  }, []);
+  }, [currency, selectedPeriod]);
 
   const fetchClasses = async () => {
     try {
@@ -91,11 +129,12 @@ const FinanceDashboard = () => {
   const fetchStats = async () => {
     try {
       setLoadingStats(true);
-      const data = await dashboardService.getStats();
+      const dateRange = getPeriodDateRange(selectedPeriod);
+      const data = await dashboardService.getStats(dateRange ? { dateRange } : {});
       setFinancialSummary([
         {
           title: 'Total Collections',
-          amount: `${data.totalCollections?.toLocaleString() || '0'} FCFA`,
+          amount: formatCurrency(data.totalCollections, currency),
           change: data.collectionsChange || '+0%',
           changeType: data.collectionsChange?.startsWith('+') ? 'positive' : 'negative',
           icon: 'DollarSign',
@@ -104,7 +143,7 @@ const FinanceDashboard = () => {
         },
         {
           title: 'Outstanding Fees',
-          amount: `${data.outstandingFees?.toLocaleString() || '0'} FCFA`,
+          amount: formatCurrency(data.outstandingFees, currency),
           change: data.outstandingChange || '+0%',
           changeType: data.outstandingChange?.startsWith('-') ? 'positive' : 'negative',
           icon: 'AlertCircle',
@@ -113,7 +152,7 @@ const FinanceDashboard = () => {
         },
         {
           title: 'Daily Revenue',
-          amount: `${data.dailyRevenue?.toLocaleString() || '0'} FCFA`,
+          amount: formatCurrency(data.dailyRevenue, currency),
           change: data.dailyRevenueChange || '+0%',
           changeType: data.dailyRevenueChange?.startsWith('+') ? 'positive' : 'negative',
           icon: 'TrendingUp',
@@ -154,7 +193,8 @@ const FinanceDashboard = () => {
   const fetchPaymentMethods = async () => {
     try {
       setLoadingPaymentMethods(true);
-      const data = await dashboardService.getPaymentMethods();
+      const dateRange = getPeriodDateRange(selectedPeriod);
+      const data = await dashboardService.getPaymentMethods(dateRange ? { dateRange } : {});
       setPaymentMethodData(data);
     } catch (err) {
       console.error('Error fetching payment methods:', err);
@@ -167,7 +207,8 @@ const FinanceDashboard = () => {
   const fetchTransactions = async () => {
     try {
       setLoadingTransactions(true);
-      const data = await dashboardService.getRecentTransactions(5);
+      const dateRange = getPeriodDateRange(selectedPeriod);
+      const data = await dashboardService.getRecentTransactions(5, dateRange ? { dateRange } : {});
       setRecentTransactions(data);
     } catch (err) {
       console.error('Error fetching transactions:', err);
@@ -193,7 +234,8 @@ const FinanceDashboard = () => {
   const fetchClassRevenue = async () => {
     try {
       setLoadingClassRevenue(true);
-      const data = await dashboardService.getClassRevenue();
+      const dateRange = getPeriodDateRange(selectedPeriod);
+      const data = await dashboardService.getClassRevenue(dateRange ? { dateRange } : {});
       setClassRevenueData(data);
     } catch (err) {
       console.error('Error fetching class revenue:', err);
@@ -320,7 +362,8 @@ const FinanceDashboard = () => {
             ) : (
               <RevenueChart
                 data={revenueData}
-                title="Monthly Revenue Breakdown" />
+                title="Monthly Revenue Breakdown"
+                currency={currency} />
             )}
 
             {loadingPaymentMethods ? (
@@ -343,7 +386,7 @@ const FinanceDashboard = () => {
                   <LoadingSkeleton className="h-64 w-full" />
                 </div>
               ) : (
-                <ClassRevenueTable classData={classRevenueData} />
+                <ClassRevenueTable classData={classRevenueData} currency={currency} />
               )}
             </div>
             <div>
@@ -360,7 +403,7 @@ const FinanceDashboard = () => {
                   </div>
                 </div>
               ) : (
-                <FeeTypeBreakdown feeTypes={feeTypes} />
+                <FeeTypeBreakdown feeTypes={feeTypes} currency={currency} />
               )}
             </div>
           </div>
@@ -389,7 +432,7 @@ const FinanceDashboard = () => {
             ) : (
               <div className="space-y-2">
                 {recentTransactions?.map((transaction, index) =>
-                  <RecentTransactionItem key={index} transaction={transaction} />
+                  <RecentTransactionItem key={index} transaction={transaction} currency={currency} />
                 )}
               </div>
             )}

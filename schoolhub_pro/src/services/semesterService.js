@@ -24,6 +24,11 @@ const semesterService = {
   async delete(id) {
     const response = await api.delete(`/semesters/${id}`);
     return response.data;
+  },
+
+  async activate(id) {
+    const response = await api.post(`/semesters/${id}/activate`);
+    return response.data;
   }
 };
 

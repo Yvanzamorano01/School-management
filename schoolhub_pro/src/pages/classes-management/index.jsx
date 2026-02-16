@@ -92,12 +92,12 @@ const ClassesManagement = () => {
 
   const filteredClasses = classes?.filter(cls => {
     const matchesSearch = cls?.name?.toLowerCase()?.includes(filters?.search?.toLowerCase()) ||
-                         cls?.code?.toLowerCase()?.includes(filters?.search?.toLowerCase()) ||
-                         cls?.description?.toLowerCase()?.includes(filters?.search?.toLowerCase());
-    const matchesYear = filters?.academicYear === 'all' || cls?.academicYear === filters?.academicYear;
+      cls?.code?.toLowerCase()?.includes(filters?.search?.toLowerCase()) ||
+      cls?.description?.toLowerCase()?.includes(filters?.search?.toLowerCase());
+    const matchesYear = filters?.academicYear === 'all' || cls?.academicYearId === filters?.academicYear;
     const matchesStatus = filters?.status === 'all' ||
-                         (filters?.status === 'active' && cls?.isActive) ||
-                         (filters?.status === 'inactive' && !cls?.isActive);
+      (filters?.status === 'active' && cls?.isActive) ||
+      (filters?.status === 'inactive' && !cls?.isActive);
 
     return matchesSearch && matchesYear && matchesStatus;
   });
@@ -165,7 +165,7 @@ const ClassesManagement = () => {
       <div className="main-content">
         <AuthHeader
           onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          onLogout={() => {}}
+          onLogout={() => { }}
         />
         <div className="portal-content">
           <Breadcrumb items={breadcrumbItems} />
@@ -173,8 +173,8 @@ const ClassesManagement = () => {
           {/* Page Header */}
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Classes Management</h1>
-              <p className="text-gray-600">Manage academic levels and curriculum structure</p>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Classes Management</h1>
+              <p className="text-muted-foreground">Manage academic levels and curriculum structure</p>
             </div>
             <Button onClick={handleCreateClass} className="flex items-center gap-2">
               <Icon name="Plus" size={20} />
@@ -222,9 +222,9 @@ const ClassesManagement = () => {
                 ))
               ) : (
                 <div className="col-span-full text-center py-12">
-                  <Icon name="Inbox" size={48} className="mx-auto mb-4 text-gray-400" />
-                  <p className="text-lg font-medium text-gray-900">No classes found</p>
-                  <p className="text-sm text-gray-600">Try adjusting your filters or add a new class</p>
+                  <Icon name="Inbox" size={48} className="mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-lg font-medium text-foreground">No classes found</p>
+                  <p className="text-sm text-muted-foreground">Try adjusting your filters or add a new class</p>
                 </div>
               )}
             </div>

@@ -10,9 +10,12 @@ import ActivityFeed from './components/ActivityFeed';
 import AttendanceOverview from './components/AttendanceOverview';
 import Icon from '../../components/AppIcon';
 import dashboardService from '../../services/dashboardService';
+import { useSchoolSettings } from '../../contexts/SchoolSettingsContext';
+import { formatCurrency } from '../../utils/format';
 
 const AdminDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { currency } = useSchoolSettings();
   const [userName, setUserName] = useState('Admin User');
   const [userRole, setUserRole] = useState('System Administrator');
 
@@ -51,7 +54,7 @@ const AdminDashboard = () => {
   // Fetch dashboard data
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [currency]);
 
   const fetchDashboardData = async () => {
     // Fetch all data in parallel
@@ -78,7 +81,7 @@ const AdminDashboard = () => {
         },
         {
           title: "Total Revenue",
-          value: `${data.totalRevenue?.toLocaleString() || "0"} FCFA`,
+          value: formatCurrency(data.totalRevenue, currency),
           change: data.revenueChange || "+0%",
           changeType: data.revenueChange?.startsWith('+') ? "positive" : "negative",
           icon: "DollarSign",
@@ -191,7 +194,7 @@ const AdminDashboard = () => {
       description: "Configure school settings, academic years, and preferences",
       icon: "Settings",
       iconColor: "var(--color-accent)",
-      route: "/admin-dashboard"
+      route: "/school-settings"
     }
   ];
 
@@ -252,7 +255,7 @@ const AdminDashboard = () => {
                 <LoadingSkeleton className="h-64 w-full" />
               </div>
             ) : (
-              <RevenueChart data={revenueData} />
+              <RevenueChart data={revenueData} currency={currency} />
             )}
             {loadingDemographics ? (
               <div className="bg-card rounded-xl border border-border p-6">

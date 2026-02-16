@@ -13,6 +13,7 @@ const ViewStudentModal = ({ isOpen, onClose, student }) => {
   const [attendanceApiData, setAttendanceApiData] = useState(null);
   const [feesApiData, setFeesApiData] = useState(null);
   const [materialsData, setMaterialsData] = useState([]);
+  const [historyData, setHistoryData] = useState([]);
 
   useEffect(() => {
     const fetchStudentData = async () => {
@@ -20,15 +21,19 @@ const ViewStudentModal = ({ isOpen, onClose, student }) => {
 
       setLoading(true);
       try {
-        const [results, attendance, fees] = await Promise.all([
+        const [results, attendance, fees, history] = await Promise.all([
           studentService.getStudentResults(student.id),
           studentService.getStudentAttendance(student.id),
-          studentService.getStudentFees(student.id)
+          studentService.getStudentFees(student.id),
+          studentService.getStudentHistory(student.id)
         ]);
+
+        console.log('API History Response for', student.name, ':', history);
 
         setResultsData(results || []);
         setAttendanceApiData(attendance || null);
         setFeesApiData(fees || null);
+        setHistoryData(history || []);
 
         // Fetch materials by student's classId
         if (student.classId) {
@@ -58,7 +63,8 @@ const ViewStudentModal = ({ isOpen, onClose, student }) => {
     { id: 'results', label: 'Academic Results', icon: 'Award' },
     { id: 'attendance', label: 'Attendance', icon: 'CalendarCheck' },
     { id: 'fees', label: 'Fees & Payments', icon: 'CreditCard' },
-    { id: 'materials', label: 'Course Materials', icon: 'FolderOpen' }
+    { id: 'materials', label: 'Course Materials', icon: 'FolderOpen' },
+    { id: 'history', label: 'History', icon: 'History' }
   ];
 
   const getStatusColor = (status) => {
@@ -292,11 +298,10 @@ const ViewStudentModal = ({ isOpen, onClose, student }) => {
                   {attendanceData?.recentRecords?.map((record, idx) => (
                     <div key={idx} className="flex items-center justify-between px-4 py-3">
                       <span className="text-sm text-foreground">{record?.date}</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        record?.status === 'Present' ? 'bg-success/10 text-success' :
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${record?.status === 'Present' ? 'bg-success/10 text-success' :
                         record?.status === 'Absent' ? 'bg-error/10 text-error' :
-                        'bg-warning/10 text-warning'
-                      }`}>
+                          'bg-warning/10 text-warning'
+                        }`}>
                         {record?.status}
                       </span>
                     </div>
@@ -359,9 +364,8 @@ const ViewStudentModal = ({ isOpen, onClose, student }) => {
                         <td className="px-4 py-3 text-sm text-foreground">{record?.type}</td>
                         <td className="px-4 py-3 text-sm text-right text-foreground">{(record?.amount || 0)?.toLocaleString()} FCFA</td>
                         <td className="px-4 py-3 text-center">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            record?.status === 'Paid' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
-                          }`}>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${record?.status === 'Paid' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
+                            }`}>
                             {record?.status}
                           </span>
                         </td>
@@ -454,6 +458,60 @@ const ViewStudentModal = ({ isOpen, onClose, student }) => {
           </div>
         );
 
+      case 'history':
+        if (loading) {
+          return (
+            <div className="flex items-center justify-center py-12">
+              <Icon name="Loader2" size={32} className="text-primary animate-spin" />
+            </div>
+          );
+        }
+
+        if (!historyData?.length) {
+          return (
+            <div className="text-center py-12">
+              <Icon name="History" size={48} className="mx-auto text-muted-foreground mb-3" />
+              <p className="text-sm text-muted-foreground">No academic history available</p>
+            </div>
+          );
+        }
+
+        return (
+          <div className="space-y-4">
+            <div className="relative border-l-2 border-muted ml-3 space-y-8 pl-6 py-2">
+              {historyData.map((record, idx) => (
+                <div key={idx} className="relative">
+                  <span className="absolute -left-[31px] top-1 h-4 w-4 rounded-full bg-primary border-4 border-background" />
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground">
+                        {record.academicYearId?.name || 'Unknown Year'}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        {record.classId?.name} - {record.sectionId?.name}
+                      </p>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium self-start ${record.status === 'Promoted' ? 'bg-success/10 text-success' :
+                      record.status === 'Retained' ? 'bg-warning/10 text-warning' :
+                        'bg-muted text-muted-foreground'
+                      }`}>
+                      {record.status}
+                    </span>
+                  </div>
+                  {record.remarks && (
+                    <p className="mt-2 text-sm text-muted-foreground bg-muted/30 p-2 rounded-md">
+                      {record.remarks}
+                    </p>
+                  )}
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {new Date(record.promotionDate || record.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -506,11 +564,10 @@ const ViewStudentModal = ({ isOpen, onClose, student }) => {
             <button
               key={tab?.id}
               onClick={() => setActiveTab(tab?.id)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
-                activeTab === tab?.id
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab?.id
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+                }`}
             >
               <Icon name={tab?.icon} size={16} />
               <span className="hidden sm:inline">{tab?.label}</span>

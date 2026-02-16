@@ -3,8 +3,9 @@ import Modal from '../../../components/ui/Modal';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import Button from '../../../components/ui/Button';
+import { formatCurrency } from '../../../utils/format';
 
-const PaymentModal = ({ isOpen, onClose, onSave, student }) => {
+const PaymentModal = ({ isOpen, onClose, onSave, student, currency }) => {
   const [formData, setFormData] = useState({
     amount: '',
     paymentMethod: 'cash',
@@ -35,7 +36,7 @@ const PaymentModal = ({ isOpen, onClose, onSave, student }) => {
     }
 
     if (parseFloat(formData?.amount) > student?.pendingAmount) {
-      newErrors.amount = `Le montant ne peut pas dépasser le solde restant (${student?.pendingAmount?.toLocaleString()} FCFA)`;
+      newErrors.amount = `Le montant ne peut pas dépasser le solde restant (${formatCurrency(student?.pendingAmount, currency)})`;
     }
 
     if (!formData?.paymentDate) {
@@ -64,15 +65,15 @@ const PaymentModal = ({ isOpen, onClose, onSave, student }) => {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Montant total:</span>
-              <p className="font-semibold text-foreground">{student?.totalAmount?.toLocaleString()} FCFA</p>
+              <p className="font-semibold text-foreground">{formatCurrency(student?.totalAmount, currency)}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Payé:</span>
-              <p className="font-semibold text-success">{student?.paidAmount?.toLocaleString()} FCFA</p>
+              <p className="font-semibold text-success">{formatCurrency(student?.paidAmount, currency)}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Restant:</span>
-              <p className="font-semibold text-warning">{student?.pendingAmount?.toLocaleString()} FCFA</p>
+              <p className="font-semibold text-warning">{formatCurrency(student?.pendingAmount, currency)}</p>
             </div>
             <div>
               <span className="text-muted-foreground">Status:</span>

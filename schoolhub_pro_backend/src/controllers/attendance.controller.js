@@ -3,13 +3,21 @@ const Student = require('../models/Student');
 
 exports.getAll = async (req, res, next) => {
   try {
-    const { classId, sectionId, startDate, endDate } = req.query;
+    const { classId, sectionId, startDate, endDate, academicYearId } = req.query;
     const query = {};
     if (classId) query.classId = classId;
     if (sectionId) query.sectionId = sectionId;
-    if (startDate && endDate) {
+
+    if (academicYearId) {
+      const AcademicYear = require('../models/AcademicYear');
+      const year = await AcademicYear.findById(academicYearId);
+      if (year) {
+        query.date = { $gte: year.startDate, $lte: year.endDate };
+      }
+    } else if (startDate && endDate) {
       query.date = { $gte: new Date(startDate), $lte: new Date(endDate) };
     }
+
     const attendance = await Attendance.find(query)
       .populate('classId', 'name')
       .populate('sectionId', 'name')

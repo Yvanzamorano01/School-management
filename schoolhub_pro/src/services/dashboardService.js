@@ -3,7 +3,7 @@ import api from './api';
 const L = { params: { limit: 1000 } };
 
 const dashboardService = {
-  async getStats() {
+  async getStats(options = {}) {
     const [students, teachers, classes, parents, payments, attendance, studentFees, feeTypes] = await Promise.allSettled([
       api.get('/students', L),
       api.get('/teachers', L),
@@ -29,17 +29,27 @@ const dashboardService = {
     const studentFeesData = extract(studentFees);
     const feeTypesData = extract(feeTypes);
 
+    // Apply optional date range filter to payments
+    let filteredPayments = paymentsData;
+    if (options.dateRange) {
+      const { from, to } = options.dateRange;
+      filteredPayments = paymentsData.filter(p => {
+        const d = new Date(p.paymentDate || p.createdAt);
+        return d >= from && d <= to;
+      });
+    }
+
     const totalStudents = studentsData.length;
     const totalTeachers = teachersData.length;
     const totalClasses = classesData.length;
     const totalParents = parentsData.length;
 
-    // Revenue from payments
-    const totalRevenue = paymentsData.reduce((sum, p) => sum + (p.amount || 0), 0);
+    // Revenue from payments (filtered if dateRange provided)
+    const totalRevenue = filteredPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
     // Today's revenue
     const today = new Date().toDateString();
-    const dailyRevenue = paymentsData
+    const dailyRevenue = filteredPayments
       .filter(p => new Date(p.paymentDate || p.createdAt).toDateString() === today)
       .reduce((sum, p) => sum + (p.amount || 0), 0);
 
@@ -84,15 +94,40 @@ const dashboardService = {
       return 'other';
     };
 
+    // For fee category stats: if dateRange, use filtered payments to compute collected per category
     const catStats = {};
-    studentFeesData.forEach(sf => {
-      const ftName = feeTypeMap[sf.feeTypeId?._id || sf.feeTypeId] || '';
-      const cat = categorize(ftName);
-      if (!catStats[cat]) catStats[cat] = { collected: 0, pending: 0, total: 0 };
-      catStats[cat].collected += (sf.paidAmount || 0);
-      catStats[cat].pending += (sf.balance || 0);
-      catStats[cat].total += (sf.totalAmount || 0);
-    });
+    if (options.dateRange) {
+      // Build studentFee → feeType category map
+      const sfCatMap = {};
+      studentFeesData.forEach(sf => {
+        const ftName = feeTypeMap[sf.feeTypeId?._id || sf.feeTypeId] || '';
+        sfCatMap[sf._id] = categorize(ftName);
+      });
+      // Sum filtered payments by category
+      filteredPayments.forEach(p => {
+        const sfId = p.studentFeeId?._id || p.studentFeeId;
+        const cat = sfCatMap[sfId] || 'other';
+        if (!catStats[cat]) catStats[cat] = { collected: 0, pending: 0, total: 0 };
+        catStats[cat].collected += (p.amount || 0);
+      });
+      // Add totals from student fees for pending/total
+      studentFeesData.forEach(sf => {
+        const ftName = feeTypeMap[sf.feeTypeId?._id || sf.feeTypeId] || '';
+        const cat = categorize(ftName);
+        if (!catStats[cat]) catStats[cat] = { collected: 0, pending: 0, total: 0 };
+        catStats[cat].total += (sf.totalAmount || 0);
+        catStats[cat].pending += (sf.balance || 0);
+      });
+    } else {
+      studentFeesData.forEach(sf => {
+        const ftName = feeTypeMap[sf.feeTypeId?._id || sf.feeTypeId] || '';
+        const cat = categorize(ftName);
+        if (!catStats[cat]) catStats[cat] = { collected: 0, pending: 0, total: 0 };
+        catStats[cat].collected += (sf.paidAmount || 0);
+        catStats[cat].pending += (sf.balance || 0);
+        catStats[cat].total += (sf.totalAmount || 0);
+      });
+    }
 
     const catRate = (cat) => {
       const s = catStats[cat];
@@ -107,8 +142,8 @@ const dashboardService = {
       sfFeeTypeMap[sf._id] = feeTypesData.find(ft => ft._id === (sf.feeTypeId?._id || sf.feeTypeId))?.name || 'Fee';
     });
 
-    // Recent transactions from payments
-    const recentTransactions = paymentsData
+    // Recent transactions from payments (filtered)
+    const recentTransactions = filteredPayments
       .sort((a, b) => new Date(b.paymentDate || b.createdAt) - new Date(a.paymentDate || a.createdAt))
       .slice(0, 10)
       .map(p => ({
@@ -124,9 +159,9 @@ const dashboardService = {
         status: 'Completed'
       }));
 
-    // Payment methods breakdown
+    // Payment methods breakdown (filtered)
     const methodTotals = {};
-    paymentsData.forEach(p => {
+    filteredPayments.forEach(p => {
       const method = p.paymentMethod || 'Cash';
       methodTotals[method] = (methodTotals[method] || 0) + (p.amount || 0);
     });
@@ -145,7 +180,7 @@ const dashboardService = {
     const isThisMonth = (d) => { const dt = new Date(d); return dt.getMonth() === thisMonth && dt.getFullYear() === thisYear; };
     const isLastMonth = (d) => { const dt = new Date(d); return dt.getMonth() === lastMonth && dt.getFullYear() === lastMonthYear; };
 
-    // Revenue change (this month vs last month)
+    // Revenue change (this month vs last month) — always use full paymentsData for change calculation
     const thisMonthRevenue = paymentsData.filter(p => isThisMonth(p.paymentDate || p.createdAt)).reduce((s, p) => s + (p.amount || 0), 0);
     const lastMonthRevenue = paymentsData.filter(p => isLastMonth(p.paymentDate || p.createdAt)).reduce((s, p) => s + (p.amount || 0), 0);
     const revenueChangePct = lastMonthRevenue > 0 ? Math.round(((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100) : (thisMonthRevenue > 0 ? 100 : 0);
@@ -174,7 +209,7 @@ const dashboardService = {
       attendanceRate,
       studentsChange: fmtChange(studentsChangePct),
       revenueChange: fmtChange(revenueChangePct),
-      attendanceChange: `+${Math.round(Math.random() * 3 + 1)}%`,
+      attendanceChange: fmtChange(attendanceRate > 0 ? Math.round((attendanceRate - 85) / 85 * 100) : 0),
       teachersChange: fmtCount(newTeachersThisMonth),
 
       // Finance dashboard
@@ -378,13 +413,39 @@ const dashboardService = {
 
   async getAttendance(period = 'week') {
     const response = await api.get('/attendance', L);
-    const attendance = Array.isArray(response.data) ? response.data : [];
+    const attendanceData = Array.isArray(response.data) ? response.data : [];
+    const dayMap = { 0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat' };
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
+    // Get last week's attendance grouped by day of week
+    const dayStats = {};
+    days.forEach(d => { dayStats[d] = { present: 0, absent: 0, total: 0 }; });
+
+    // Sort by date desc, take recent records
+    const sorted = attendanceData.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const recent = sorted.slice(0, 50); // Last 50 records
+
+    recent.forEach(record => {
+      const dt = new Date(record.date);
+      const dayName = dayMap[dt.getDay()];
+      if (!dayStats[dayName]) return;
+
+      const records = record.records || [];
+      const present = records.filter(r => r.status === 'present' || r.status === 'late').length;
+      const absent = records.filter(r => r.status === 'absent').length;
+      dayStats[dayName].present += present;
+      dayStats[dayName].absent += absent;
+      dayStats[dayName].total += records.length;
+    });
+
     return days.map(day => {
-      const present = Math.round(70 + Math.random() * 25);
-      const absent = 100 - present;
-      return { day, present, absent };
+      const s = dayStats[day];
+      const total = s.total || 1;
+      return {
+        day,
+        present: Math.round((s.present / total) * 100),
+        absent: Math.round((s.absent / total) * 100)
+      };
     });
   },
 
@@ -399,15 +460,24 @@ const dashboardService = {
       type: typeMap[notice.priority] || 'info',
       title: notice.title || 'Notification',
       description: notice.content ? notice.content.substring(0, 100) + '...' : (notice.target ? `Target: ${notice.target}` : ''),
-      timestamp: notice.publishDate || notice.createdAt || new Date().toISOString()
+      timestamp: notice.createdAt || notice.publishDate || new Date().toISOString()
     }));
   },
 
-  async getPaymentMethods() {
+  async getPaymentMethods(options = {}) {
     const response = await api.get('/payments', L);
-    const payments = Array.isArray(response.data) ? response.data : [];
-    const methods = {};
+    let payments = Array.isArray(response.data) ? response.data : [];
 
+    // Filter by date range if provided
+    if (options.dateRange) {
+      const { from, to } = options.dateRange;
+      payments = payments.filter(p => {
+        const d = new Date(p.paymentDate || p.createdAt);
+        return d >= from && d <= to;
+      });
+    }
+
+    const methods = {};
     payments.forEach(p => {
       const method = p.paymentMethod || 'Cash';
       methods[method] = (methods[method] || 0) + (p.amount || 0);
@@ -422,16 +492,25 @@ const dashboardService = {
     }));
   },
 
-  async getRecentTransactions(limit = 5) {
+  async getRecentTransactions(limit = 5, options = {}) {
     const [paymentsRes, studentFeesRes, feeTypesRes] = await Promise.allSettled([
       api.get('/payments', L),
       api.get('/student-fees', L),
       api.get('/fee-types', L)
     ]);
 
-    const payments = paymentsRes.status === 'fulfilled' ? (Array.isArray(paymentsRes.value.data) ? paymentsRes.value.data : []) : [];
+    let payments = paymentsRes.status === 'fulfilled' ? (Array.isArray(paymentsRes.value.data) ? paymentsRes.value.data : []) : [];
     const studentFees = studentFeesRes.status === 'fulfilled' ? (Array.isArray(studentFeesRes.value.data) ? studentFeesRes.value.data : []) : [];
     const feeTypesData = feeTypesRes.status === 'fulfilled' ? (Array.isArray(feeTypesRes.value.data) ? feeTypesRes.value.data : []) : [];
+
+    // Filter by date range if provided
+    if (options.dateRange) {
+      const { from, to } = options.dateRange;
+      payments = payments.filter(p => {
+        const d = new Date(p.paymentDate || p.createdAt);
+        return d >= from && d <= to;
+      });
+    }
 
     // Build lookup maps
     const feeTypeNameMap = {};
@@ -464,29 +543,67 @@ const dashboardService = {
     return Array.isArray(response.data) ? response.data : [];
   },
 
-  async getClassRevenue() {
-    const [classesRes, studentFeesRes] = await Promise.allSettled([
+  async getClassRevenue(options = {}) {
+    const [classesRes, studentFeesRes, paymentsRes] = await Promise.allSettled([
       api.get('/classes', L),
-      api.get('/student-fees', L)
+      api.get('/student-fees', L),
+      api.get('/payments', L)
     ]);
 
     const classes = classesRes.status === 'fulfilled' ? classesRes.value.data : [];
     const studentFees = studentFeesRes.status === 'fulfilled' ? studentFeesRes.value.data : [];
+    let payments = paymentsRes.status === 'fulfilled' ? (Array.isArray(paymentsRes.value.data) ? paymentsRes.value.data : []) : [];
 
     if (!Array.isArray(classes)) return [];
+
+    // Filter payments by date range if provided
+    if (options.dateRange) {
+      const { from, to } = options.dateRange;
+      payments = payments.filter(p => {
+        const d = new Date(p.paymentDate || p.createdAt);
+        return d >= from && d <= to;
+      });
+    }
+
+    // Build studentFee → classId lookup
+    const sfClassMap = {};
+    if (Array.isArray(studentFees)) {
+      studentFees.forEach(sf => {
+        sfClassMap[sf._id] = sf.studentId?.classId?._id || sf.studentId?.classId || null;
+      });
+    }
 
     return classes.map(cls => {
       const classFees = Array.isArray(studentFees)
         ? studentFees.filter(sf => {
-          const sid = sf.studentId?._id || sf.studentId;
           return sf.studentId?.classId === cls._id || sf.studentId?.classId?._id === cls._id;
         })
         : [];
-      const revenue = classFees.reduce((sum, sf) => sum + (sf.paidAmount || 0), 0);
+
+      let collected;
+      if (options.dateRange) {
+        // Sum payments that belong to this class's student fees
+        const classFeeIds = new Set(classFees.map(sf => sf._id?.toString()));
+        collected = payments
+          .filter(p => classFeeIds.has((p.studentFeeId?._id || p.studentFeeId)?.toString()))
+          .reduce((sum, p) => sum + (p.amount || 0), 0);
+      } else {
+        // No date filter: use cumulative paidAmount
+        collected = classFees.reduce((sum, sf) => sum + (sf.paidAmount || 0), 0);
+      }
+
+      const totalExpected = classFees.reduce((sum, sf) => sum + (sf.totalAmount || 0), 0);
+      const outstanding = Math.max(0, totalExpected - collected);
+      const collectionRate = totalExpected > 0 ? Math.round((collected / totalExpected) * 100) : 0;
+
       return {
+        className: cls.name || 'Unknown',
         name: cls.name || 'Unknown',
-        revenue,
-        students: cls.totalStudents || 0
+        students: cls.totalStudents || 0,
+        collected,
+        outstanding,
+        collectionRate,
+        revenue: collected
       };
     });
   },

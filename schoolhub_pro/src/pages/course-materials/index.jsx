@@ -163,6 +163,13 @@ const CourseMaterials = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+
+      // Update local state to reflect the new download count
+      setMaterials(prev => prev.map(m =>
+        m.id === material.id
+          ? { ...m, downloads: (m.downloads || 0) + 1 }
+          : m
+      ));
     } catch (err) {
       console.error('Error downloading material:', err);
       alert('Failed to download material');
@@ -204,10 +211,7 @@ const CourseMaterials = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = '/';
-  };
+
 
   const breadcrumbItems = [
     { label: 'Dashboard', path: userRole === 'admin' ? '/admin-dashboard' : userRole === 'teacher' ? '/teacher-dashboard' : '/student-dashboard' },
@@ -223,7 +227,7 @@ const CourseMaterials = () => {
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
 
-      <AuthHeader onLogout={handleLogout} />
+      <AuthHeader />
 
       <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <div className="main-content-inner">

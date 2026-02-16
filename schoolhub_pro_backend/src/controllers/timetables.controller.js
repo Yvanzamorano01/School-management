@@ -40,22 +40,22 @@ exports.create = async (req, res, next) => {
     const { classId, sectionId, day, startTime, endTime, subjectId, teacherId, room, type } = req.body;
 
     // Check for teacher conflict (same teacher, same day, same time)
-    const teacherConflict = await Timetable.findOne({
-      teacherId, day, startTime,
-      _id: { $ne: req.params?.id }
-    });
-    if (teacherConflict) {
-      return res.status(400).json({
-        success: false,
-        message: 'Teacher is already assigned to another class at this time'
+    if (teacherId && day && startTime) {
+      const teacherConflict = await Timetable.findOne({
+        teacherId, day, startTime
       });
+      if (teacherConflict) {
+        return res.status(400).json({
+          success: false,
+          message: 'Teacher is already assigned to another class at this time'
+        });
+      }
     }
 
     // Check for room conflict (same room, same day, same time)
-    if (room) {
+    if (room && day && startTime) {
       const roomConflict = await Timetable.findOne({
-        room, day, startTime,
-        _id: { $ne: req.params?.id }
+        room, day, startTime
       });
       if (roomConflict) {
         return res.status(400).json({

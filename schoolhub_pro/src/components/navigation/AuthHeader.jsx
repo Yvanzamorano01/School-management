@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../AppIcon';
 import { useSchoolSettings } from '../../contexts/SchoolSettingsContext';
 
+import authService from '../../services/authService';
+
 const ROLE_LABELS = {
   'super_admin': 'Super Admin',
   'admin': 'Administrateur',
@@ -30,6 +32,7 @@ const AuthHeader = ({ onLogout }) => {
   }, []);
 
   const handleLogout = () => {
+    authService.logout();
     if (onLogout) {
       onLogout();
     }
@@ -45,9 +48,9 @@ const AuthHeader = ({ onLogout }) => {
       <div className="auth-header-brand">
         <div className="auth-header-logo">
           {schoolLogo ? (
-            <img src={schoolLogo} alt="School logo" className="w-6 h-6 object-contain rounded" />
+            <img src={schoolLogo} alt="School logo" className="w-12 h-12 object-contain rounded" />
           ) : (
-            <Icon name="GraduationCap" size={24} color="var(--color-primary)" />
+            <Icon name="GraduationCap" size={40} color="var(--color-primary)" />
           )}
         </div>
         <span className="auth-header-title">{schoolName}</span>
